@@ -1,2 +1,4 @@
 # 2019_NxS_ithaca
-Gas exchange and environmental data for 2016 field physiology campaign at the Boston Area Climate Experiment (BACE) 
+This repository contains data relevant to an experiment conducted in 2019 in an ongoing nitrogen-by-sulfur field manipulation experiment around Ithaca, NY. This repository and associated data corresponds with a manuscript currently in preparation, preliminarily titled *"Soil nitrogen availability modifies leaf water and nitrogen economies in a closed canopy temperate forest: a direct test of photosynthetic least-cost theory"*.
+
+This repository is currently under construction and will be published on Zenodo once complete.
