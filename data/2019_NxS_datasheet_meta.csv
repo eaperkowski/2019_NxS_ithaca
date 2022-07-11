@@ -1,0 +1,33 @@
+﻿var,description,units
+site,site,N/A
+treatment,plot nutrient treatment,N/A
+n.trt,nitrogen addition status,N/A
+s.trt,sulfur addition status,N/A
+tag.id,tag identifier of tree,N/A
+nrcs.code,NRCS species code per PLANTS database,N/A
+myc.status,"mycorrhizal type. assumed, not measured",N/A
+soil.nh4,soil ammonium-N concentration,mg L-1
+soil.no3,soil nitrate-N concentration,mg L-1
+soil.total.n,total ammonium-nitrate concentration,mg L-1
+soil.nh4.day,soil ammonium-N concentration,μg N per g resin per day
+soil.no3.day,soil nitrate-N concentration,μg N per g resin per day
+soil.total.n.day,total ammonium-nitrate concentration,μg N per g resin per day
+mineral pH,0-10 cm soil pH,N/A
+ohorizon.pH,surface layer soil pH,N/A
+leaf.n,leaf nitrogen content,gN g-1
+sla,specific leaf area,cm2 g-1
+narea,leaf nitorgen per leaf area,gN m-2
+leaf.temp,leaf temperature of CO2 response curve,degC
+a400,net photosynthesis rate at 400 μmol mol-1,μmol m-2 s-1
+vcmax25,maximum Rubisco carboxylation rate,μmol m-2 s-1
+jmax25,maximum RuBP regeneration rate,μmol m-2 s-1
+jmax.vcmax,ratio of jmax25 to vcmax25,unitless
+gsw,stomatal conductance to water,mol m-2 s-1
+chi,isotope-derived ratio of intercellular CO2 to atmospheric CO2,unitless
+stom.lim,stomatal limitation,unitless
+pnue,photosynthetic nitrogen use efficiency,µmol CO2 gN-1 s-1
+iwue,intrinsic water use efficiency (gas exchange based),μmol CO2 mol-1 H2O
+vcmax.gs,ratio of vcmax (temp unstandardized) to stomatal conductance,μmol CO2 mol-1 H2O
+narea.gs,ratio of leaf nitrogen per leaf area to stomatal conductance,gN s mol-1 H2O
+ba.2011.2019,relative change in tree basal area between 2011 and 2019,cm2 yr-1
+growth.2011.2019,relative growth rate between 2011 and 2019,kg kg-1 yr-1
