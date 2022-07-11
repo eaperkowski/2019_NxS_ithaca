@@ -14,7 +14,7 @@ library(multcompView)
 emm_options(opt.digits = FALSE)
 
 # Import datasheet
-data <- read.csv("../data_sheets/NxS_datasheet.csv",
+data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
                  na.strings = "NA")
 

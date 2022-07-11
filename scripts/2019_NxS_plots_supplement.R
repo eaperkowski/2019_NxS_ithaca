@@ -23,10 +23,10 @@ pubtheme <- theme_bw(base_size = 18) +
 cbbPalette <- c("#DDAA33", "#BB5566", "#004488", "#BBBBBB", "#FFFFFF")
 
 ## Load data and marginal mean + SE summary sheet
-data <- read.csv("../data_sheets/NxS_datasheet.csv",
+data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
                  na.strings = "NA")
-spp.data <- read.csv("../data_sheets/NxS_figs_emmeanOutputs.csv",
+spp.data <- read.csv("../data/2019_NxS_figs_emmeanOutputs.csv",
                      strip.white = TRUE)
 spp.data$.group <- tolower(spp.data$.group)
 

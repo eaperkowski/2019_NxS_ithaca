@@ -1,3 +1,5 @@
+## NOTE: Script assumes that the`scripts` folder is the root directory
+
 ## Libraries
 library(tidyverse)
 library(dplyr)
@@ -28,11 +30,11 @@ pubtheme <- theme_bw(base_size = 18) +
 cbbPalette <- c("#DDAA33", "#BB5566", "#004488", "#BBBBBB", "#FFFFFF")
 
 ## Load data and marginal mean + SE summary sheet
-data <- read.csv("../data_sheets/NxS_datasheet.csv",
+data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
                  na.strings = "NA")
-spp.data <- read.csv("../data_sheets/NxS_figs_emmeanOutputs.csv")
-soil.data <- read.csv("../data_sheets/NxS_figs_soilemmeanOutputs.csv")
+spp.data <- read.csv("../data/2019_NxS_figs_emmeanOutputs.csv")
+soil.data <- read.csv("../data/2019_NxS_figs_soilemmeanOutputs.csv")
 soil.data$.group <- tolower(soil.data$.group)
 
 ## Remove outliers based on statistical models

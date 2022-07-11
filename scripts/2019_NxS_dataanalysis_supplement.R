@@ -11,7 +11,7 @@ library(sjPlot)
 #################################################
 # Load data, replace negative a400 values with NA
 #################################################
-data <- read.csv("../data_sheets/NxS_datasheet.csv",
+data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
                  na.strings = "NA")
 data$a400[data$a400 < 0.2] <- NA
