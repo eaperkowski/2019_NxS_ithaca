@@ -14,7 +14,7 @@ library(multcompView)
 emm_options(opt.digits = FALSE)
 
 # Import datasheet
-data <- read.csv("../data/2019_NxS_datasheet.csv",
+data <- read.csv("../data_sheets/NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
                  na.strings = "NA")
 
@@ -41,6 +41,8 @@ soil.n <- lmer(soil.n.total.day ~ n.trt * s.trt + (1 | site),
 
 # Check model assumptions (no S-W tests due to low n)
 plot(soil.n)
+hist(residuals(soil.n))
+shapiro.test(residuals(soil.n))
 
 # Model output
 summary(soil.n)
@@ -49,14 +51,15 @@ Anova(soil.n)
 # Pairwise comparisons
 emmeans(soil.n, pairwise~n.trt)
 emmeans(soil.n, pairwise~s.trt)
-cld(emmeans(soil.n, ~n.trt * s.trt), Letters = letters)
+cld(emmeans(soil.n, pairwise~n.trt * s.trt), Letters = letters)
 
 # Emmean data output
 soil.n.pairwise <- data.frame(variable = "soil.n",
                               cld(emmeans(soil.n, 
-                                          ~n.trt*s.trt),
-                                  Letters = LETTERS))
+                                          ~n.trt*s.trt, type = "response"),
+                                  Letters = LETTERS)) 
 soil.n.pairwise$.group <- trimws(soil.n.pairwise$.group, which = "both")
+soil.n.pairwise$.group <- c("B", "A", "A", "C")
 
 ##########################################################################
 ## Mineral pH against categorical N and S treatment
@@ -66,6 +69,7 @@ soil.pH <- lmer(mineral.pH ~ n.trt * s.trt + (1 | site),
 
 # Check model assumptions (no S-W tests due to low n)
 plot(soil.pH)
+hist(residuals(soil.pH))
 
 # Model output
 summary(soil.pH)
@@ -74,13 +78,15 @@ Anova(soil.pH)
 # Pairwise comparisons
 emmeans(soil.pH, pairwise~n.trt)
 emmeans(soil.pH, pairwise~s.trt)
-cld(emmeans(soil.pH, ~n.trt * s.trt))
+cld(emmeans(soil.pH, pairwise~n.trt * s.trt))
 
 soil.pH.pairwise <- data.frame(variable = "soil.pH",
                               cld(emmeans(soil.pH, 
                                           ~n.trt*s.trt),
                                   Letters = LETTERS))
 soil.pH.pairwise$.group <- trimws(soil.pH.pairwise$.group, which = "both")
+soil.pH.pairwise$.group <- c("C", "C", "B", "A")
+
 
 soil.pairwise <- soil.n.pairwise %>%
         full_join(soil.pH.pairwise)
@@ -114,6 +120,7 @@ r.squaredGLMM(leaf.n)
 test(emtrends(leaf.n, ~1, var = "soil.n.total.day"))
 emmeans(leaf.n, ~1, at = list(mean.soil.n = 0))
 cld(emmeans(leaf.n, pairwise~nrcs.code))
+
 
 # Emmean output for fig making
 leaf.n.pairwise <- data.frame(variable = "leaf.n",
@@ -347,8 +354,6 @@ names(vjmax.pairwise)[3] <- "emmean"
 ##########################################################################
 ## Vcmax as a function of Narea 
 ##########################################################################
-vcmax.
-
 vcmax.fx.narea <- lmer(vcmax25 ~ narea + (1 | site), 
                        data = subset(data, nrcs.code == "ACRU" |
                                        nrcs.code == "ACSA3" |
@@ -448,7 +453,7 @@ chi.pairwise <- data.frame(variable = "chi",
 ##########################################################################
 ## Stomatal Limitation
 ##########################################################################
-data$stom.lim[c(75)] <- NA
+data$stom.lim[c(10, 23, 75)] <- NA
 
 l <- lmer(stom.lim ~ soil.n.total.day + mineral.pH + nrcs.code +
             (1 | site), data = subset(data, nrcs.code == "ACRU" |
@@ -659,13 +664,13 @@ Anova(ba)
 r.squaredGLMM(ba)
 
 ## Pairwise comparisons
-test(emtrends(ba, ~1, var = "soil.n.total"))
-emmeans(ba, pairwise~nrcs.code)
+test(emtrends(ba, ~1, var = "soil.n.total.day"))
+cld(emmeans(ba, pairwise~nrcs.code))
 
 ## Figure making
-emtrends(ba, ~1, var = "soil.n.total", transform = "response")
-emmeans(ba, ~1, at = list(mean.soil.n = 0), transform = "response")
-emmeans(ba, pairwise~nrcs.code, type = "response")
+emtrends(ba, ~1, var = "soil.n.total.day", transform = "response")
+emmeans(ba, ~1, at = list(soil.n.total.day = 0), transform = "response")
+emmeans(ba, pairwise~nrcs.code)
 
 # Emmean output for fig making
 ba.pairwise <- data.frame(variable = "basal.area",
@@ -701,7 +706,7 @@ r.squaredGLMM(growth)
 
 # Post-hoc analyses
 test(emtrends(growth, ~1, var = 'mineral.pH'))
-emmeans(growth, pairwise~nrcs.code, type = "response")
+cld(emmeans(growth, pairwise~nrcs.code))
 
 # Emmean output for fig making
 growth.pairwise <- data.frame(variable = "rgr",
