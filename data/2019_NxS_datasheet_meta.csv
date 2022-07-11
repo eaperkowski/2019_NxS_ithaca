@@ -16,7 +16,7 @@ mineral pH,0-10 cm soil pH,N/A
 ohorizon.pH,surface layer soil pH,N/A
 leaf.n,leaf nitrogen content,gN g-1
 sla,specific leaf area,cm2 g-1
-narea,leaf nitorgen per leaf area,gN m-2
+narea,leaf nitrogen per leaf area,gN m-2
 leaf.temp,leaf temperature of CO2 response curve,degC
 a400,net photosynthesis rate at 400 μmol mol-1,μmol m-2 s-1
 vcmax25,maximum Rubisco carboxylation rate,μmol m-2 s-1
