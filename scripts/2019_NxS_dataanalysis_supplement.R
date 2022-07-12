@@ -7,6 +7,7 @@ library(emmeans)
 library(tidyverse)
 library(ggpubr)
 library(sjPlot)
+library(MuMIn)
 
 #################################################
 # Load data, replace negative a400 values with NA
@@ -61,8 +62,6 @@ hist(residuals(a400))
 shapiro.test(residuals(a400))
 outlierTest(a400)
 
-summary(a400)
-coef(a400)
 
 # Model output
 summary(a400)
@@ -87,9 +86,11 @@ a400.linear <- data.frame(get_model_data(a400, type = "pred"))
 
 a.area <- ggplot(data = sub.data,
                  aes(x = leaf.temp, y = a400)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 4, alpha = 0.65) +
-  geom_function(fun = function(x) exp(9.422 -0.572*x + 0.00998*(x^2)),
+  geom_point(aes(fill = nrcs.code, shape = treatment), 
+             size = 3, alpha = 0.65) +
+  geom_line(data = a400.linear, aes(x = leaf.temp.x, y = leaf.temp.predicted),
+            size = 1, color = "blue", linetype = "dashed") +
+  geom_function(fun = function(x) exp(9.422 -0.573*x + 0.010*(x^2)),
                 linetype = "dashed", 
                 size = 1, xlim = c(21, 32)) +
   scale_x_continuous(limits = c(21, 33), 
@@ -146,8 +147,7 @@ gs400.nls <- nls(formula = log(gsw) ~ a + b*leaf.temp + c*(leaf.temp^2),
                 start = list(a = -0.17, b = -0.18, c = 0.0027),
                 data = sub.data)
 coef(gs400.nls)
-
-
+summary(gs400.nls)
 
 AICc(gs400, gs400.nls)
 
@@ -157,9 +157,11 @@ AICc(gs400, gs400.nls)
 gs400.linear <- data.frame(get_model_data(gs400, type = "pred"))
 
 gs.area <- ggplot(data = sub.data,
-                 aes(x = leaf.temp, y = gsw)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 4, alpha = 0.65) +
+                  aes(x = leaf.temp, y = gsw)) +
+  geom_point(aes(fill = nrcs.code, shape = treatment), 
+             size = 3, alpha = 0.65) +
+  geom_line(data = gs400.linear, aes(x = leaf.temp.x, y = leaf.temp.predicted),
+            size = 1, linetype = "dashed", color = "blue") +
   geom_function(fun = function(x) exp(-0.1695 - 0.1857*x + 0.00266*(x^2)),
                 linetype = "dashed", 
                 size = 1, xlim = c(21, 32)) +
@@ -187,10 +189,11 @@ gs.area <- ggplot(data = sub.data,
   pubtheme
 gs.area
 
+
 #################################################
 # Create Fig. S1
 #################################################
-png("../working_drafts/figs/NxS_figS1_leaftemp.png",
+png("/Users/eaperkowski/git/nitrogen_pH/working_drafts/figs/NxS_figS1_leaftemp.png",
     width = 10, height = 4.5, units = 'in', res = 600)
 ggarrange(a.area, gs.area, ncol = 2, nrow = 1,
           common.legend = TRUE,
