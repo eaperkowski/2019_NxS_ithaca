@@ -1,15 +1,13 @@
-## NOTE: Script assumes that the`scripts` folder is the root directory
-
+##########################################################################
+## Figure prep
+#########################################################################
 ## Libraries
 library(tidyverse)
 library(dplyr)
 library(ggpubr)
 library(gridExtra)
 library(lme4)
-library(sjPlot)
-library(patchwork)
-library(gtable)
-library(grid)
+library(emmeans)
 
 ## Central figure theme
 pubtheme <- theme_bw(base_size = 18) +
@@ -22,154 +20,95 @@ pubtheme <- theme_bw(base_size = 18) +
         legend.key = element_rect(fill = NA),
         legend.background=element_blank(),
         legend.title = element_text(face = "bold"),
+        legend.text = element_text(size = 18),
         axis.ticks.length = unit(0.25, "cm"),
         panel.grid.minor.y = element_blank(),
         legend.text.align = 0)
 
 ## Add colorblind friendly palette
-cbbPalette <- c("#DDAA33", "#BB5566", "#004488", "#BBBBBB", "#FFFFFF")
+cbbPalette <- c("#FFFFFF", "#DDAA33", "#BB5566", "#004488", "#000000")
 
 ## Load data and marginal mean + SE summary sheet
 data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
                  na.strings = "NA")
-spp.data <- read.csv("../data/2019_NxS_figs_emmeanOutputs.csv")
-soil.data <- read.csv("../data/2019_NxS_figs_soilemmeanOutputs.csv")
-soil.data$.group <- tolower(soil.data$.group)
+  
+spp.data <- read.csv("../data/2019_NxS_figs_emmeanOutputs.csv") %>%
+  mutate(nrcs.code = ifelse(nrcs.code == "ACSA3",
+                            "ACSA",
+                            ifelse(nrcs.code == "FRAM2", 
+                                   "FRAM",
+                                   nrcs.code)),
+         nrcs.code = factor(nrcs.code, 
+                            levels = c("ACRU", "ACSA", "FRAM", 
+                                       "FAGR", "QURU")))
 
 ## Remove outliers based on statistical models
+data$narea[12] <- NA
 data$a400[data$a400 < 0.2] <- NA
 data$vcmax25[11] <- NA
 data$jmax25[11] <- NA
-data$stom.lim[c(75)] <- NA
+data$chi[66] <- NA
+data$stom.lim[c(68, 75)] <- NA
 data$pnue[data$pnue < 0] <- NA
-data$pnue[c(16, 102)] <- NA
 data$iwue[data$iwue < 0] <- NA
 data$iwue[c(16, 102)] <- NA
-data$vcmax.gs[11] <- NA
-data$ba.2011.2019[data$ba.2011.2019 <= 0] <- NA
-data$growth.2011.2019[data$growth.2011.2019 <= 0] <- NA
+data$p.bioe[11] <- NA
+data$p.photo[11] <- NA
+data$p.structure[49] <- NA
+data$narea.chi[12] <- NA
+data$vcmax.chi[c(11, 37)] <- NA
 
 ## Subset by five primary species
 data <- subset(data, nrcs.code == "ACRU" | nrcs.code == "ACSA3" |
                  nrcs.code == "QURU" | nrcs.code == "FAGR" | 
-                 nrcs.code == "FRAM2")
+                 nrcs.code == "FRAM2") %>%
+  mutate(nrcs.code = ifelse(nrcs.code == "ACSA3",
+                            "ACSA",
+                            ifelse(nrcs.code == "FRAM2", 
+                                   "FRAM",
+                                   nrcs.code)),
+         nrcs.code = factor(nrcs.code, 
+                            levels = c("ACRU", "ACSA", "FRAM", 
+                                       "FAGR", "QURU")))
 
-# Add s.trt facet labels
-facet.labels <- c("Sulfur added", "No sulfur added")
-names(facet.labels) <- c("high.sulf", "low.sulf")
-
-##########################################################################
-## Categorical treatment combination effects on soil nitrogen availability
-##########################################################################
-soiln.plot.nsa <- ggplot(data = subset(soil.data, 
-                                       variable == "soil.n" & s.trt == "low.sulf"), 
-                         aes(x = factor(n.trt, levels = c("low.nit", "high.nit")),
-                             y = emmean,
-                             fill = factor(n.trt, levels = c("low.nit", "high.nit")))) +
-  geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), 
-                position = position_dodge(0.9), width = 0.5, size = 1.5) +
-  geom_point(aes(fill = n.trt), shape = 21, size = 6) +
-  facet_grid(.~s.trt, labeller = labeller(s.trt = facet.labels)) +
-  geom_text(aes(y = 30, label = .group), size = 7) +
-  scale_y_continuous(limits = c(-0.5, 32), breaks = seq(0, 32, 8)) +
-  scale_x_discrete(labels = c("low.nit" = "-N", "high.nit" = "+N")) +
-  scale_fill_manual(values = c("#BB5566", "#004488")) +
-  labs(x = NULL,
-       y = expression(bold("Soil N (μg N g"^"-1"~"resin day"^"-1"~")"))) +
-  guides(fill = "none") +
-  pubtheme
-soiln.plot.nsa
-
-soiln.plot.sa <- ggplot(data = subset(soil.data, 
-                                      variable == "soil.n" & s.trt == "high.sulf"), 
-                         aes(x = factor(n.trt, levels = c("low.nit", "high.nit")),
-                             y = emmean, fill = factor(n.trt, levels = c("low.nit", 
-                                                                         "high.nit")))) +
-  geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), 
-                position = position_dodge(0.9), width = 0.5, size = 1.5) +
-  geom_point(aes(fill = n.trt), shape = 21, size = 6) +
-  facet_grid(.~s.trt, labeller = labeller(s.trt = facet.labels)) +
-  geom_text(aes(y = 30, label = .group), size = 7) +
-  scale_y_continuous(limits = c(-0.5, 32), breaks = seq(0, 32, 8)) +
-  scale_x_discrete(labels = c("low.nit" = "-N", "high.nit" = "+N")) +
-  scale_fill_manual(values = c("#BB5566", "#004488")) +
-  labs(x = NULL, y = NULL) +
-  guides(fill = "none") +
-  pubtheme
-soiln.plot.sa
+## Create blank plot as spacer plot
+blank.plot <- ggplot() + 
+  theme_bw() +
+  theme(panel.background = element_rect(color = "white",
+                                        fill = "white"),
+        panel.border = element_rect(color = "white"))
 
 ##########################################################################
-## Categorical treatment combination effects on soil pH
+## Nmass - soil N
 ##########################################################################
-ph.plot.nsa <- ggplot(data = subset(soil.data, 
-                                   variable == "soil.pH" & s.trt == "low.sulf"),
-                  aes(x = factor(n.trt, levels = c("low.nit", "high.nit")),
-                      y = emmean, fill = factor(n.trt, levels = c("low.nit", "high.nit")))) +
-  geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), 
-                position = position_dodge(0.9), width = 0.5, size = 1.5) +
-  geom_point(shape = 21, size = 6) +
-  facet_grid(.~s.trt, labeller = labeller(s.trt = facet.labels)) +
-  geom_text(aes(y = 5.1, label = .group), size = 7) +
-  scale_y_continuous(limits = c(3.9, 5.15), breaks = seq(3.9, 5.1, 0.3)) +
-  scale_x_discrete(labels = c("low.nit" = "-N", "high.nit" = "+N")) +
-  scale_fill_manual(values = c("#BB5566", "#004488")) +
-  labs(x = NULL,
-       y = expression(bold("Soil pH"))) +
-  guides(fill = "none") +
-  pubtheme +
-  theme(strip.text = element_blank(),
-        panel.grid.minor = element_blank())
-ph.plot.nsa
-
-ph.plot.sa <- ggplot(data = subset(soil.data, 
-                                   variable == "soil.pH" & s.trt == "high.sulf"),
-                     aes(x = factor(n.trt, levels = c("low.nit", "high.nit")),
-                         y = emmean, 
-                         fill = factor(n.trt, levels = c("low.nit", "high.nit")))) +
-  #geom_bar(stat = "identity", position = "dodge") +
-  geom_errorbar(aes(ymin = emmean - SE, ymax = emmean + SE), 
-                position = position_dodge(0.9), width = 0.5, size = 1.5) +
-  geom_point(shape = 21, size = 6) +
-  facet_grid(.~s.trt, labeller = labeller(s.trt = facet.labels)) +
-  geom_text(aes(y = 5.1, label = .group), size = 7) +
-  scale_y_continuous(limits = c(3.9, 5.15), breaks = seq(3.9, 5.1, 0.3)) +
-  scale_x_discrete(labels = c("low.nit" = "-N", "high.nit" = "+N")) +
-  scale_fill_manual(values = c("#BB5566", "#004488")) +
-  labs(x = NULL,
-       y = NULL) +
-  guides(fill = "none") +
-  pubtheme +
-  theme(strip.text = element_blank())
-ph.plot.sa
-
-##########################################################################
-## Nleaf
-##########################################################################
-leaf.n <- lmer(leaf.n ~ soil.n.total.day + mineral.pH + nrcs.code + 
+nmass <- lmer(leaf.n ~ soil.n.norm + mineral.pH + nrcs.code + 
                  (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                             nrcs.code == "ACSA3" |
+                                             nrcs.code == "ACSA" |
                                              nrcs.code == "QURU" |
                                              nrcs.code == "FAGR" | 
-                                             nrcs.code == "FRAM2"))
-leaf.n.fit <- data.frame(get_model_data(leaf.n, type = "pred", 
-                                        terms = "soil.n.total.day"))
+                                             nrcs.code == "FRAM"))
+car::Anova(nmass)
+nmass.trend <- data.frame(emmeans(nmass, ~1, "soil.n.norm", 
+                                  at = list(soil.n.norm = c(0, 4, seq(20,30,0.1)))))
 
-
-nleaf <- ggplot(data = data, aes(x = soil.n.total.day, y = leaf.n)) +
+nleaf <- ggplot(data = data, aes(x = soil.n.norm, y = leaf.n/100)) +
   geom_jitter(data = data, aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
+              width = 1, size = 4, alpha = 0.75) +
+  geom_ribbon(data = nmass.trend, 
+              aes(y = emmean/100,
+                  ymin = lower.CL/100, ymax = upper.CL/100),
+              alpha = 0.3) +
+  geom_smooth(data = nmass.trend, aes(y = emmean/100), size = 1, se = FALSE,
+              color = "black", method = 'lm') +
   scale_x_continuous(limits = c(0, 30), 
                      breaks = seq(0, 30, 10)) +
-  geom_ribbon(data = leaf.n.fit, aes(x = x, y = predicted,
-                                     ymin = conf.low, ymax = conf.high), alpha = 0.3) +
-  geom_line(data = leaf.n.fit, aes(x = x, y = predicted), size = 1) +
-  scale_y_continuous(limits = c(1, 4), 
-                     breaks = seq(1, 4, 1)) +
-  scale_fill_manual(values = cbbPalette, 
+  scale_y_continuous(limits = c(0.015, 0.035), 
+                     breaks = seq(0.015, 0.035, 0.005)) +
+  scale_fill_manual(values = cbbPalette,
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
   scale_shape_manual(values = c(21, 22, 23, 24),
@@ -178,7 +117,7 @@ nleaf <- ggplot(data = data, aes(x = soil.n.total.day, y = leaf.n)) +
                                 "S" = "-N; +S",
                                 "C" = "-N; -S")) +
   labs(x = NULL,
-       y = expression(bold("N"["mass"]~"(g g"^"-1"~")")),
+       y = expression(bold("N"["mass"]*" (gN g"["dry biomass"]*""^"-1"*")")),
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
@@ -186,70 +125,140 @@ nleaf <- ggplot(data = data, aes(x = soil.n.total.day, y = leaf.n)) +
 nleaf
 
 ##########################################################################
-## SLA
+## Nmass - SPECIES
 ##########################################################################
-sla <- lmer(log(sla) ~ soil.n.total.day + mineral.pH * nrcs.code + 
-              (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                          nrcs.code == "ACSA3" |
-                                          nrcs.code == "QURU" |
-                                          nrcs.code == "FAGR" | 
-                                          nrcs.code == "FRAM2"))
-sla.fit <- data.frame(get_model_data(sla, type = "pred", 
-                                     terms = "soil.n.total.day"))
-
-sla <- ggplot(data = data, aes(x = soil.n.total.day, y = sla)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  #geom_ribbon(data = sla.fit, aes(x = x, y = predicted, ymin = conf.low,
-  #                                ymax = conf.high), alpha = 0.3) +
-  #geom_line(data = slice(sla.fit, c(1,12)), 
-  #          aes(x = x, y = predicted), size = 1) +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 450), breaks = seq(0, 450, 150)) +
+nleaf.spp <- ggplot(data = subset(spp.data, variable == "leaf.n"),
+                    aes(x = nrcs.code, y = emmean/100, 
+                        fill = nrcs.code)) +
+  geom_jitter(data = data, aes(x = nrcs.code, y = leaf.n/100,
+                               fill = nrcs.code, shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL/100, ymax =upper.CL/100),
+                size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 0.035, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0.015, 0.035), breaks = seq(0.015, 0.035, 0.005)) +
   scale_fill_manual(values = cbbPalette, 
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
-  labs(x = NULL, 
-       y = expression(bold("SLA (cm"^"-2"~"g"^"-1"~")")),
+  scale_shape_manual(values = c(21, 22, 23, 25),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(x = NULL,
+       y = NULL,
+       shape = "Treatment",
+       fill = "Species") +
+  pubtheme
+nleaf.spp
+
+##########################################################################
+## Marea - soil N
+##########################################################################
+marea <- lmer(marea ~ soil.n.norm + mineral.pH + nrcs.code + 
+                (1 | site), data = subset(data, nrcs.code == "ACRU" |
+                                            nrcs.code == "ACSA" |
+                                            nrcs.code == "QURU" |
+                                            nrcs.code == "FAGR" | 
+                                            nrcs.code == "FRAM"))
+
+marea.trend <- data.frame(emmeans(marea, ~1, "soil.n.norm", 
+                                  at = list(soil.n.norm = c(0, 4, seq(20,30,0.1)))))
+
+
+
+marea <- ggplot(data = data, aes(x = soil.n.norm, y = marea)) +
+  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
+              width = 1, size = 4, alpha = 0.75) +
+  geom_ribbon(data = marea.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
+              alpha = 0.3) +
+  geom_line(data = marea.trend, 
+            aes(y = emmean), size = 1) +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(20, 110), breaks = seq(20, 110, 30)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = expression(bold("Soil N (μg N g"^"-1"*" resin d"^"-1"*")")), 
+       y = expression(bold("M"[area]*" (g"["dry biomass"]*" m"["leaf"]*""^"-2"*")")),
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
-sla
+marea
 
 ##########################################################################
-## Narea
+## Marea - SPECIES
 ##########################################################################
-narea <- lmer(narea ~ soil.n.total.day + mineral.pH + nrcs.code +
+marea.spp <- ggplot(data = subset(spp.data, variable == "marea"),
+                  aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, aes(x = nrcs.code, y = marea, fill = nrcs.code,
+                               shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 110, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(20, 110), breaks = seq(20, 110, 30)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 25), 
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = "Species",
+       y = NULL,
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+marea.spp
+
+##########################################################################
+## Narea - soil N
+##########################################################################
+narea <- lmer(narea ~ soil.n.norm + mineral.pH + nrcs.code +
                 (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                            nrcs.code == "ACSA3" |
+                                            nrcs.code == "ACSA" |
                                             nrcs.code == "QURU" |
                                             nrcs.code == "FAGR" | 
-                                            nrcs.code == "FRAM2"))
-narea.fit <- data.frame(get_model_data(narea, type = "pred", 
-                                       terms = "soil.n.total.day"))
+                                            nrcs.code == "FRAM"))
+narea.trend <- data.frame(emmeans(narea, ~1, "soil.n.norm", 
+                                  at = list(soil.n.norm = c(0, 4, seq(20,30,0.1)))))
 
-narea <- ggplot(data = data, aes(x = soil.n.total.day, y = narea)) +
+
+narea <- ggplot(data = data, aes(x = soil.n.norm, y = narea)) +
   geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  geom_ribbon(data = narea.fit, aes(x = x, y = predicted,
-                                    ymin = conf.low, ymax = conf.high), 
+              width = 1, size = 4, alpha = 0.75) +
+  geom_ribbon(data = narea.trend,
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
               alpha = 0.3) +
-  geom_line(data = narea.fit, aes(x = x, y = predicted), size = 1) +
+  geom_line(data = narea.trend, aes(y = emmean), size = 1) +
   scale_x_continuous(limits = c(0, 30), 
                      breaks = seq(0, 30, 10)) +
   scale_y_continuous(limits = c(0, 3), breaks = seq(0, 3, 1)) +
   scale_fill_manual(values = cbbPalette, 
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
   scale_shape_manual(values = c(21, 22, 23, 24),
@@ -258,7 +267,7 @@ narea <- ggplot(data = data, aes(x = soil.n.total.day, y = narea)) +
                                 "S" = "-N; +S",
                                 "C" = "-N; -S")) +
   labs(x = NULL,
-       y = expression(bold("N"["area"]~"(g m"^"-2"~")")),
+       y = expression(bold("N"["area"]*" (gN m"["leaf"]*""^"-2"*")")),
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
@@ -266,18 +275,49 @@ narea <- ggplot(data = data, aes(x = soil.n.total.day, y = narea)) +
 narea
 
 ##########################################################################
-## Net photosynthesis (area basis)
+## Narea - SPECIES
 ##########################################################################
-a.area <- ggplot(data = data, aes(x = soil.n.total.day, y = a400)) +
+narea.spp <- ggplot(data = subset(spp.data, variable == "narea"),
+                    aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, aes(x = nrcs.code, y = narea, fill = nrcs.code,
+                               shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 3, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 3), breaks = seq(0, 3, 1)) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 25),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = NULL,
+       y = NULL,
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+narea.spp
+
+##########################################################################
+## A400 - soil N
+##########################################################################
+a400 <- ggplot(data = data, aes(x = soil.n.norm, y = a400)) +
   geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
+              width = 1, size = 4, alpha = 0.75) +
   scale_x_continuous(limits = c(0, 30), 
                      breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 15), breaks = seq(0, 15, 3)) +
+  scale_y_continuous(limits = c(0, 16), breaks = seq(0, 16, 4)) +
   scale_fill_manual(values = cbbPalette, 
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
   scale_shape_manual(values = c(21, 22, 23, 24),
@@ -286,33 +326,102 @@ a.area <- ggplot(data = data, aes(x = soil.n.total.day, y = a400)) +
                                 "S" = "-N; +S",
                                 "C" = "-N; -S")) +
   labs(x = NULL,
-       y = expression(bold("A"["net"]~ "(μmol m"^"-2"~"s"^"-1"~")")),
+       y = expression(bold("A"["net"]*" (μmol m"^"-2"*" s"^"-1"*")")),
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
-a.area
+a400
 
 ##########################################################################
-## Vcmax.area standardized to 25degC 
+## A400 - SPECIES
 ##########################################################################
-vcmax <- ggplot(data = data, aes(x = soil.n.total.day, y = vcmax25)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
-  scale_fill_manual(values = cbbPalette, 
+a400.spp <- ggplot(data = subset(spp.data, variable == "a400"),
+                     aes(x = nrcs.code, y = emmean^2, fill = nrcs.code)) +
+  geom_jitter(data = data, aes(x = nrcs.code, y = a400, fill = nrcs.code,
+                               shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL^2, ymax = upper.CL^2), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 16, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 16), breaks = seq(0, 16, 4)) +
+  scale_fill_manual(values = cbbPalette,
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
+  scale_shape_manual(values = c(21, 22, 23, 25), 
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
   labs(x = NULL,
-       y = expression(bold("V"["cmax25"]~"(μmol m"^"-2" ~ "s"^"-1" ~")")),
+       y = NULL,
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+a400.spp
+
+##########################################################################
+## A400 - leaf N
+##########################################################################
+a400.leaf <- lmer(sqrt(a400) ~ narea + (1 | nrcs.code) + (1 | site), data = data)
+
+a400.nleaf.trend <- data.frame(emmeans(a400.leaf, ~1, "narea", 
+                                       at = list(narea = seq(0.72, 2.67, 0.01)),
+                                       type = "response"))
+
+a400.narea <- ggplot(data = data, aes(x = narea, y = a400)) +
+  geom_point(aes(fill = nrcs.code, shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = a400.nleaf.trend, 
+              aes(y = response, ymin = lower.CL, ymax = upper.CL), 
+              alpha = 0.3) +
+  geom_line(data = a400.nleaf.trend, aes(y = response), size = 1) +
+  scale_x_continuous(limits = c(0.5, 3), breaks = seq(0.5, 3, 0.5)) +
+  scale_y_continuous(limits = c(0, 16), breaks = seq(0, 16, 4)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = NULL,
+       y = NULL,
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+a400.narea
+
+##########################################################################
+## Vcmax - soil N
+##########################################################################
+vcmax <- ggplot(data = data, aes(x = soil.n.norm, y = vcmax25)) +
+  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
+              width = 1, size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(0, 120), breaks = seq(0, 120, 30)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = NULL,
+       y = expression(bold("V"["cmax25"]*" (μmol m"^"-2"*" s"^"-1"*")")),
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
@@ -320,506 +429,792 @@ vcmax <- ggplot(data = data, aes(x = soil.n.total.day, y = vcmax25)) +
 vcmax
 
 ##########################################################################
-## Jmax.area standardized to 25degC 
+## Vcmax - SPECIES
 ##########################################################################
-jmax <- ggplot(data = data, aes(x = soil.n.total.day, y = jmax25)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  scale_x_continuous(limits = c(0, 30), 
-                     breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 200), 
-                     breaks = seq(0, 200, 50)) +
-  scale_fill_manual(values = cbbPalette, 
+vcmax.spp <- ggplot(data = subset(spp.data, variable == "vcmax25"),
+                    aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, 
+              aes(x = nrcs.code, y = vcmax25, fill = nrcs.code, shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 120, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 120), breaks = seq(0, 120, 30)) +
+  scale_fill_manual(values = cbbPalette,
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
+  scale_shape_manual(values = c(21, 22, 23, 25), 
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
   labs(x = NULL,
-       y = expression(bold("J"["max25"]~"(μmol m"^"-2" ~ "s"^"-1" ~")")),
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+vcmax.spp
+
+##########################################################################
+## Vcmax - leaf N
+##########################################################################
+vcmax.leaf <- lmer(vcmax25 ~ narea + (1 | nrcs.code) + (1 | site), data = data)
+
+vcmax.narea.trend <- data.frame(emmeans(vcmax.leaf, ~1, "narea",
+                                        at = list(narea = seq(0.7, 2.67, 0.01))))
+
+vcmax.narea <- ggplot(data = data, aes(x = narea, y = vcmax25)) +
+  geom_point(aes(fill = nrcs.code, shape = treatment), 
+              size = 4, alpha = 0.75) +
+  geom_ribbon(data = vcmax.narea.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
+              alpha = 0.3) +
+  geom_line(data = vcmax.narea.trend, aes(y = emmean), size = 1) +
+  scale_x_continuous(limits = c(0.5, 3), breaks = seq(0.5, 3, 0.5)) +
+  scale_y_continuous(limits = c(0, 120), breaks = seq(0, 120, 30)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = NULL,
+       y = NULL,
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
+vcmax.narea
+
+##########################################################################
+## Jmax - soil N
+##########################################################################
+jmax <- ggplot(data = data, aes(x = soil.n.norm, y = jmax25)) +
+  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
+              width = 1, size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(0, 200), breaks = seq(0, 200, 50)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = expression(bold("Soil N (μg N g"^"-1"*" resin d"^"-1"*")")),
+       y = expression(bold("J"["max25"]*" (μmol m"^"-2" ~ "s"^"-1"*")")),
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme +
+  theme(axis.title.x = element_text(size = 16))
 jmax
 
 ##########################################################################
-## Jmax:Vcmax standardized to 25degC 
+## Jmax - SPECIES
 ##########################################################################
-vjmax <- lmer(log(jmax.vcmax) ~ soil.n.total.day + mineral.pH + nrcs.code + 
-                (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                            nrcs.code == "ACSA3" |
-                                            nrcs.code == "QURU" |
-                                            nrcs.code == "FAGR" | 
-                                            nrcs.code == "FRAM2"))
-
-jmax.vcmax <- ggplot(data = data, aes(x = soil.n.total.day, y = jmax.vcmax)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(1, 3), breaks = seq(1, 3, 0.5)) +
-  scale_fill_manual(values = cbbPalette, 
+jmax.spp <- ggplot(data = subset(spp.data, variable == "jmax25"),
+                   aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, aes(x = nrcs.code, y = jmax25, fill = nrcs.code,
+                               shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 200, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 200), breaks = seq(0, 200, 50)) +
+  scale_fill_manual(values = cbbPalette,
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
-  labs(x = NULL,
-       y = expression(bold("J"["max25"]~":V"["cmax25"])),
-       shape = "Treatment",
-       fill = "Species") +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  pubtheme
-jmax.vcmax
+  scale_shape_manual(values = c(21, 22, 23, 25), 
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = "Species",
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) + 
+  pubtheme +
+  theme(axis.title.x = element_text(size = 16))
+jmax.spp
 
 ##########################################################################
-## Stomatal conductance
+## Jmax - leaf N
 ##########################################################################
-gs <- lmer(log(gsw) ~ soil.n.total.day + mineral.pH + nrcs.code + 
-             (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                         nrcs.code == "ACSA3" |
-                                         nrcs.code == "QURU" |
-                                         nrcs.code == "FAGR" | 
-                                         nrcs.code == "FRAM2"))
+jmax.leaf <- lmer(jmax25 ~ narea +  (1 | nrcs.code) + (1 | site), data = data)
 
-gs <- ggplot(data = data, aes(x = soil.n.total.day, y = gsw)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 0.18), breaks = seq(0, 0.18, 0.06)) +
+
+jmax.narea.trend <- data.frame(emmeans(jmax.leaf, ~1, "narea",
+                                       at = list(narea = c(0.7, 2.67, 0.01))))
+
+
+jmax.narea <- ggplot(data = data, aes(x = narea, y = jmax25)) +
+  geom_point(aes(fill = nrcs.code, shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = jmax.narea.trend, 
+              aes(y = emmean,
+                  ymin = lower.CL, ymax = upper.CL), 
+              alpha = 0.3) +
+  geom_line(data = jmax.narea.trend, aes(y = emmean), 
+            size = 1) +
+  scale_x_continuous(limits = c(0.5, 3), breaks = seq(0.5, 3, 0.5)) +
+  scale_y_continuous(limits = c(0, 200), breaks = seq(0, 200, 50)) +
   scale_fill_manual(values = cbbPalette, 
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
-  labs(x = NULL,
-       y = expression(bold("g"["s400"]~"(mol m"^"-2"~"s"^"-1"~")")),
-       shape = "Treatment",
-       fill = "Species") +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  pubtheme
-gs
-
-##########################################################################
-## chi
-##########################################################################
-chi <- lmer(chi ~ soil.n.total.day + mineral.pH + nrcs.code +
-              (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                          nrcs.code == "ACSA3" |
-                                          nrcs.code == "QURU" |
-                                          nrcs.code == "FAGR" |
-                                          nrcs.code == "FRAM2"))
-
-chi <- ggplot(data = data, aes(x = soil.n.total.day, y = chi)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0.4, 1.0), breaks = seq(0.4, 1.0, 0.2)) +
-  scale_fill_manual(values = cbbPalette, 
-                    labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
-                               "FAGR" = expression(italic("F. grandifolia")),
-                               "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
-  labs(x = NULL,
-       y = expression(bold("χ (Pa Pa"^"-1"~")")),
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = expression(bold("N"["area"]*" (gN m"["leaf"]*""^"-2"*")")),
+       y = NULL,
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme +
-  theme(axis.title.y = element_text(size = 15))  
+  theme(axis.title.x = element_text(size = 16))
+jmax.narea
+
+##########################################################################
+## chi - soil N
+##########################################################################
+chi <- ggplot(data = data, aes(x = soil.n.norm, y = chi)) +
+  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
+              width = 1, size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(0.5, 1.0), breaks = seq(0.5, 1.0, 0.1)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = NULL,
+       y = expression(bold(chi*" (unitless)")),
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
 chi
 
 ##########################################################################
-## Stomatal limitation
+## chi - SPECIES
 ##########################################################################
-l <- lmer(stom.lim ~ soil.n.total.day + mineral.pH + nrcs.code +
-            (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                        nrcs.code == "ACSA3" |
-                                        nrcs.code == "QURU" |
-                                        nrcs.code == "FAGR" |
-                                        nrcs.code == "FRAM2"))
-l.fit <- data.frame(get_model_data(l, type = "pred", 
-                                   terms = "soil.n.total.day"))
-
-l <- ggplot(data = data, aes(x = soil.n.total.day, y = stom.lim)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  #geom_ribbon(data = l.fit, aes(x = x, y = predicted,
-  #                              ymin = conf.low, ymax = conf.high), 
-  #            alpha = 0.3) +
-  #geom_line(data = l.fit, aes(x = x, y = predicted), 
-  #          size = 1, linetype = "dashed") +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0.7, 1), breaks = seq(0.7, 1, 0.1)) +
-  scale_fill_manual(values = cbbPalette, 
+chi.spp <- ggplot(data = subset(spp.data, variable == "chi"),
+                  aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data,
+              aes(x = nrcs.code, y = chi, fill = nrcs.code, shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 1, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0.5, 1.0), breaks = seq(0.5, 1.0, 0.1)) +
+  scale_fill_manual(values = cbbPalette,
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
   labs(x = NULL,
-       y = expression(bold("Stomatal limitation")),
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme 
+chi.spp
+
+##########################################################################
+## chi - leaf N
+##########################################################################
+chi.leaf <- lmer(chi ~ narea + (1 | nrcs.code) + (1 | site), data = data)
+
+chi.narea.trend <- data.frame(emmeans(chi.leaf, ~1, "narea",
+                                      at = list(narea = seq(0.7, 2.67, 0.01))))
+
+chi.narea <- ggplot(data = data, aes(x = narea, y = chi)) +
+  geom_point(aes(fill = nrcs.code, shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = chi.narea.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
+              alpha = 0.3) +
+  geom_line(data = chi.narea.trend, aes(y = emmean), size = 1) +
+  scale_x_continuous(limits = c(0.5, 3), breaks = seq(0.5, 3, 0.5)) +
+  scale_y_continuous(limits = c(0.5, 1.0), breaks = seq(0.5, 1.0, 0.1)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = NULL,
+       y = NULL,
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
-l
+chi.narea
 
 ##########################################################################
-## PNUE
+## PNUE - soil N
 ##########################################################################
-pnue <- lmer(sqrt(pnue) ~ soil.n.total.day + mineral.pH + nrcs.code +
-               (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                           nrcs.code == "ACSA3" |
-                                           nrcs.code == "QURU" |
-                                           nrcs.code == "FAGR" |
-                                           nrcs.code == "FRAM2"))
-pnue.fit <- data.frame(get_model_data(pnue, type = "pred",
-                                      terms = "soil.n.total.day"))
-pnue <- ggplot(data = data, aes(x = soil.n.total.day, y = pnue)) +
+pnue <- lmer(sqrt(pnue) ~ soil.n.norm + mineral.pH + nrcs.code +
+               (1 | site), data = data)
+
+pnue.trend <- data.frame(emmeans(pnue, ~1, "soil.n.norm",
+                                 at = list(soil.n.norm = c(0, 4, seq(20,30,0.1))),
+                                 type = "response"))
+
+pnue.plot <- ggplot(data = data, aes(x = soil.n.norm, y = pnue)) +
   geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  geom_ribbon(data = pnue.fit, aes(x = x, y = predicted,
-                                   ymin = conf.low, ymax = conf.high), 
+              width = 2, size = 4, alpha = 0.75) +
+  geom_ribbon(data = pnue.trend,
+              aes(y = response,
+                  ymin = lower.CL, ymax = upper.CL), 
               alpha = 0.3) +
-  geom_line(data = slice(pnue.fit, c(1,12)), 
-            aes(x = x, y = predicted), size = 1) +
+  geom_line(data = pnue.trend, 
+            aes(y = response), size = 1) +
   scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 3)) +
+  scale_y_continuous(limits = c(0, 120), breaks = seq(0, 120, 30)) +
   scale_fill_manual(values = cbbPalette, 
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
   labs(x = NULL,
-       y = expression(bold("PNUE (μmol CO"["2"]~" gN"^"-1"~"s"^"-1"~")")),
+       y = expression(bold("PNUE (μmol CO"["2"]*" mol"^"-1"*"N s"^"-1"*")")),
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme +
-  theme(axis.title.y = element_text(size = 15))  
-pnue
+  theme(axis.title = element_text(size = 15))  
+pnue.plot
 
 ##########################################################################
-## iWUE
+## PNUE - SPECIES
 ##########################################################################
-iwue <- lmer(iwue ~ soil.n.total.day + mineral.pH + nrcs.code +
-               (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                           nrcs.code == "ACSA3" |
-                                           nrcs.code == "QURU" |
-                                           nrcs.code == "FAGR" |
-                                           nrcs.code == "FRAM2"))
+pnue.spp <- ggplot(data = subset(spp.data, variable == "pnue"),
+                   aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, aes(x = nrcs.code, y = pnue, fill = nrcs.code,
+                               shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 120, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 120), breaks = seq(0, 120, 30)) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = NULL,
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme +
+  theme(axis.title = element_text(size = 15))
+pnue.spp
 
-iwue <- ggplot(data = data, aes(x = soil.n.total.day, y = iwue)) +
+##########################################################################
+## Narea-chi - soil N
+##########################################################################
+narea.chi <- lmer(narea.chi ~ soil.n.norm + mineral.pH + nrcs.code +
+                   (1 | site), data = data)
+
+narea.chi.trend <- data.frame(emmeans(narea.chi, ~1, "soil.n.norm",
+                                      at = list(soil.n.norm = c(0, 4, seq(20,30,0.1)))))
+
+narea.chi.plot <- ggplot(data = data, aes(x = soil.n.norm, y = narea.chi)) +
   geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
+              width = 1, size = 4, alpha = 0.75) +
+  geom_ribbon(data = narea.chi.trend , 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
+              alpha = 0.3) +
+  geom_line(data = narea.chi.trend , 
+            aes(y = emmean), size = 1) +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(0, 4.25), breaks = seq(0, 4, 1)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = NULL,
+       y = expression(bold("N"["area"]*" : "*chi*" (gN m"["leaf"]*""^"-2"*")")),
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+narea.chi.plot
+
+##########################################################################
+## Narea-chi - SPECIES
+##########################################################################
+narea.chi.spp <- ggplot(data = subset(spp.data, variable == "narea.chi"),
+                       aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data,
+              aes(x = nrcs.code, y = narea.chi, fill = nrcs.code, shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 4.25, label = .group), 
+            fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 4.25), breaks = seq(0, 4, 1)) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(x = NULL,
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  pubtheme
+narea.chi.spp
+
+##########################################################################
+## Vcmax-chi - soil N
+##########################################################################
+vcmax.chi <- ggplot(data = data, aes(x = soil.n.norm, y = vcmax.chi)) +
+  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
+              width = 1, size = 4, alpha = 0.75) +
   scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
   scale_y_continuous(limits = c(0, 180), breaks = seq(0, 180, 60)) +
   scale_fill_manual(values = cbbPalette, 
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
-  labs(x = NULL,
-       y = expression(bold("A"["400"]~": g"["s400"]~"(μmol CO"["2"]~" mol"^"-1"~"H"["2"]~"O)")),
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = expression(bold("Soil N (μg N g"^"-1"*" resin d"^"-1"*")")),
+       y = expression(bold("V"["cmax"]*" : "*chi*" (μmol m"^"-2"*"s"^"-1"*")")),
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme #+
+ # theme(axis.title = element_text(size = 15))
+vcmax.chi
+
+##########################################################################
+## Vcmax-chi - SPECIES
+##########################################################################
+vcmax.chi.spp <- ggplot(data = subset(spp.data, variable == "vcmax.chi"),
+                       aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, aes(x = nrcs.code, y = vcmax.chi, fill = nrcs.code,
+                               shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 180, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 180), breaks = seq(0, 180, 60)) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = "Species",
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
-iwue
+vcmax.chi.spp
 
 ##########################################################################
-## narea-gs
+## Vcmax-gs - leaf N
 ##########################################################################
-narea.gs <- lmer(log(narea.gs) ~ soil.n.total.day + mineral.pH + nrcs.code +
-                   (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                               nrcs.code == "ACSA3" |
-                                               nrcs.code == "QURU" |
-                                               nrcs.code == "FAGR" |
-                                               nrcs.code == "FRAM2"))
-narea.gs.fit <- data.frame(get_model_data(narea.gs, type = "pred",
-                                          terms = "soil.n.total.day"))
+vcmax.chi.leaf <- lmer(vcmax.chi ~ narea + (1 | nrcs.code) + (1 | site), 
+                      data = data)
+vcmax.chi.leaf.trend <- data.frame(emmeans(vcmax.chi.leaf, ~1, "narea",
+                                         at = list(narea = seq(0.7, 2.67, 0.01))))
 
-narea.gs <- ggplot(data = data, aes(x = soil.n.total.day, y = narea.gs)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  geom_ribbon(data = narea.gs.fit, 
-              aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high), 
+
+vcmax.chi.narea <- ggplot(data = data, aes(x = narea, y = vcmax.chi)) +
+  geom_point(aes(fill = nrcs.code, shape = treatment), size = 4, alpha = 0.75) +
+  geom_ribbon(data = vcmax.chi.leaf.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
               alpha = 0.3) +
-  geom_line(data = slice(narea.gs.fit, c(1,12)), 
-            aes(x = x, y = predicted), size = 1) +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 200), breaks = seq(0, 200, 50)) +
+  geom_line(data = vcmax.chi.leaf.trend, aes(y = emmean), size = 1) +
+  scale_x_continuous(limits = c(0.5, 3), breaks = seq(0.5, 3, 0.5)) +
+  scale_y_continuous(limits = c(0, 180), breaks = seq(0, 180, 60)) +
   scale_fill_manual(values = cbbPalette, 
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
-  labs(x = NULL,
-       y = expression(bold("N"["area"]~":g"["s"]~"(gN s mol"^"-1"~"H"["2"]~"O)")),
-       shape = "Treatment",
-       fill = "Species") +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  pubtheme + 
-  theme(axis.title.y = element_text(size = 15))  
-narea.gs
-
-##########################################################################
-## vcmax-gs
-##########################################################################
-vcmax.gs <- lmer(log(vcmax.gs) ~ soil.n.total.day * mineral.pH + nrcs.code +
-                   (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                               nrcs.code == "ACSA3" |
-                                               nrcs.code == "QURU" |
-                                               nrcs.code == "FAGR" |
-                                               nrcs.code == "FRAM2"))
-
-
-vcmax.gs.fit <- data.frame(get_model_data(vcmax.gs, type = "pred",
-                                          terms = "soil.n.total.day"))
-vcmax.gs <- ggplot(data = data, aes(x = soil.n.total.day, y = vcmax.gs)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  geom_ribbon(data = vcmax.gs.fit, 
-              aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high), 
-              alpha = 0.3) +
-  geom_line(data = slice(vcmax.gs.fit, c(1,12)), 
-            aes(x = x, y = predicted), size = 1, linetype = "dashed") +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 8000), breaks = seq(0, 8000, 2000)) +
-  scale_fill_manual(values = cbbPalette, 
-                    labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
-                               "FAGR" = expression(italic("F. grandifolia")),
-                               "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
-  labs(x = NULL,
-       y = expression(bold("V"["cmax"]~":g"["s"]~"(μmol CO"["2"]~"mol"^"-1"~"H"["2"]~"O)")),
-       shape = "Treatment",
-       fill = "Species") +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  pubtheme +
-  theme(axis.title.y = element_text(size = 15))
-vcmax.gs
-
-##########################################################################
-## Change in basal area
-##########################################################################
-ba <- lmer(sqrt(ba.2011.2019) ~ soil.n.total.day + mineral.pH + nrcs.code + 
-             (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                         nrcs.code == "ACSA3" |
-                                         nrcs.code == "QURU" |
-                                         nrcs.code == "FAGR" |
-                                         nrcs.code == "FRAM2"))
-
-ba <- ggplot(data = data, aes(x = soil.n.total.day, y = ba.2011.2019)) +
-  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
-  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 140), breaks = seq(0, 140, 35)) +
-  scale_fill_manual(values = cbbPalette, 
-                    labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
-                               "FAGR" = expression(italic("F. grandifolia")),
-                               "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
-  labs(x = NULL,
-       y = expression(bold("BA"["11_19"]~"(cm"^"2"~"yr"^"-1"~")")),
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = expression(bold("N"["area"]*" (gN m"["leaf"]*""^"-2"*")")),
+       y = NULL,
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
-ba
+vcmax.chi.narea
 
 ##########################################################################
-## Relative growth rate
+## N in photosynthesis - soil N
 ##########################################################################
-growth <- lmer(sqrt(growth.2011.2019) ~ soil.n.total.day + mineral.pH + nrcs.code +
-                 (1 | site), data = subset(data, nrcs.code == "ACRU" |
-                                             nrcs.code == "ACSA3" |
-                                             nrcs.code == "QURU" |
-                                             nrcs.code == "FAGR" |
-                                             nrcs.code == "FRAM2"))
-
-rgr <- ggplot(data = data, aes(x = soil.n.total.day, y = growth.2011.2019)) +
+p.photo <- ggplot(data = data, aes(x = soil.n.norm, y = p.photo)) +
   geom_jitter(aes(fill = nrcs.code, shape = treatment), 
-              width = 1, size = 3, alpha = 0.75) +
+              width = 1, size = 4, alpha = 0.75) +
   scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_y_continuous(limits = c(0, 200), breaks = seq(0, 200, 50)) +
+  scale_y_continuous(limits = c(0, 0.8), breaks = seq(0, 0.8, 0.2)) +
   scale_fill_manual(values = cbbPalette, 
                     labels = c("ACRU" = expression(italic("A. rubrum")),
-                               "ACSA3" = expression(italic("A. saccharum")),
-                               "FRAM2" = expression(italic("F. americana")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
                                "FAGR" = expression(italic("F. grandifolia")),
                                "QURU" = expression(italic("Q. rubra")))) +
-  scale_shape_manual(values = c(21, 22, 23, 24), labels = c("AS" = "+N; +S",
-                                                            "NO3" = "+N; -S",
-                                                            "S" = "-N; +S",
-                                                            "C" = "-N; -S")) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
   labs(x = NULL,
-       y = expression(bold("RGR"["11_19"]~"(kg kg"^"-1"~"yr"^"-1"~")")),
+       y = expression(bold(rho["photo"]*" (gN"["photo"]* " gN"["leaf"]*""^-1*")")),
        shape = "Treatment",
        fill = "Species") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
-rgr
+p.photo
 
 ##########################################################################
-## Figure 1: Categorical nutrient treatment effects on soil N and pH
+## N in photosynthesis - SPECIES
 ##########################################################################
-png("../working_drafts/figs/NxS_fig1_categorical.png",
-    width = 8, height = 8, units = 'in', res = 600)
-ggarrange(soiln.plot.nsa, soiln.plot.sa, ph.plot.nsa, ph.plot.sa,
-          ncol = 2, nrow = 2, common.legend = TRUE, align = "v",
-          legend = "right", labels = "AUTO",
-          font.label = list(size = 18, face = "bold")) %>%
-  annotate_figure(bottom = text_grob(
-    expression(bold("Soil nitrogen addition")),
-    size = 18))
-dev.off()
+p.photo.spp <- ggplot(data = subset(spp.data, variable == "p.photo"),
+                       aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, 
+              aes(x = nrcs.code, y = p.photo, fill = nrcs.code,
+                  shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 0.8, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 0.8), breaks = seq(0, 0.8, 0.2)) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = NULL,
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+p.photo.spp
 
 ##########################################################################
-## Figure 2: leaf N allocation
+## N in rubisco - soil N
 ##########################################################################
-png("../working_drafts/figs/NxS_fig2_leafn.png",
-    width = 12, height = 6, units = 'in', res = 600)
-ggarrange(narea, ggarrange(nleaf, sla, ncol = 1, nrow = 2,
-                           legend = "none", align = "hv", labels = c("B", "C"),
-                           font.label = list(size = 18, face = "bold")),
-          common.legend = TRUE, legend = "right", labels = c("A"),
-          widths = c(1.5, 1),
-          font.label = list(size = 18, face = "bold")) %>%
-  annotate_figure(bottom = text_grob(
-            expression(bold("Soil nitrogen (μg N g"^"-1"~"resin day"^"-1"~")")),
-            size = 18))
+p.rubisco <- ggplot(data = data, aes(x = soil.n.norm, y = p.rubisco)) +
+  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
+              width = 1, size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(0, 0.65), breaks = seq(0, 0.6, 0.2)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = NULL,
+       y = expression(bold(rho["rub"]*" (gN"["rub"]* " gN"["leaf"]*""^-1*")")),
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+p.rubisco
+
+##########################################################################
+## Prop N in rubisco - SPECIES
+##########################################################################
+p.rubisco.spp <- ggplot(data = subset(spp.data, variable == "p.rubisco"),
+                          aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, 
+              aes(x = nrcs.code, y = p.rubisco, fill = nrcs.code,
+                  shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 0.65, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 0.65), breaks = seq(0, 0.6, 0.2)) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = NULL,
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+p.rubisco.spp
+
+##########################################################################
+## Prop N in bioenergetics - soil N
+##########################################################################
+p.bioenergetics <- ggplot(data = data, aes(x = soil.n.norm, y = p.bioe)) +
+  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
+              width = 1, size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(0, 0.1), breaks = seq(0, 0.1, 0.025)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = NULL,
+       y = expression(bold(rho["bioe"]*" (gN"["bioe"]* " gN"["leaf"]*""^-1*")")),
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+p.bioenergetics
+
+##########################################################################
+## Prop N in bioenergetics - SPECIES
+##########################################################################
+p.bio.spp <- ggplot(data = subset(spp.data, variable == "p.bioe"),
+                        aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, 
+              aes(x = nrcs.code, y = p.bioe, fill = nrcs.code,
+                  shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 0.1, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 0.1), breaks = seq(0, 0.1, 0.025)) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = NULL,
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+p.bio.spp
+
+##########################################################################
+## Prop N in structure - soil N
+##########################################################################
+p.structure <- ggplot(data = data, aes(x = soil.n.norm, y = p.structure)) +
+  geom_jitter(aes(fill = nrcs.code, shape = treatment), 
+              width = 1, size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(0, 0.12), breaks = seq(0, 0.12, 0.03)) +
+  scale_fill_manual(values = cbbPalette, 
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24), 
+                     labels = c("AS" = "+N; +S",
+                                "NO3" = "+N; -S",
+                                "S" = "-N; +S",
+                                "C" = "-N; -S")) +
+  labs(x = expression(bold("Soil N (μg N g"^"-1"*" resin d"^"-1"*")")),
+       y = expression(bold(rho["str"]*" (gN"["str"]* " gN"["leaf"]*""^-1*")")),
+       shape = "Treatment",
+       fill = "Species") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+p.structure
+
+##########################################################################
+## Prop N in structure - SPECIES
+##########################################################################
+p.str.spp <- ggplot(data = subset(spp.data, variable == "p.structure"),
+                    aes(x = nrcs.code, y = emmean, fill = nrcs.code)) +
+  geom_jitter(data = data, 
+              aes(x = nrcs.code, y = p.structure, fill = nrcs.code,
+                  shape = treatment),
+              size = 4, width = 0.2, alpha = 0.75) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), size = 1, width = 0.5) +
+  geom_point(size = 5, shape = 21, fill = "black") +
+  geom_text(aes(y = 0.12, label = .group), fontface = "bold", size = 5) +
+  scale_y_continuous(limits = c(0, 0.12), breaks = seq(0, 0.12, 0.03)) +
+  scale_fill_manual(values = cbbPalette,
+                    labels = c("ACRU" = expression(italic("A. rubrum")),
+                               "ACSA" = expression(italic("A. saccharum")),
+                               "FRAM" = expression(italic("F. americana")),
+                               "FAGR" = expression(italic("F. grandifolia")),
+                               "QURU" = expression(italic("Q. rubra")))) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("AS" = "+N, +S",
+                                "NO3" = "+N, -S",
+                                "S" = "-N, +S",
+                                "C" = "-N, -S")) +
+  labs(x = "Species",
+       y = NULL,
+       fill = "Species",
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+p.str.spp
+
+##########################################################################
+## Figure 1: leaf N
+##########################################################################
+png("../working_drafts/figs/NxS_fig1_leafn.png",
+    width = 12, height = 12, units = 'in', res = 600)
+ggarrange(narea, narea.spp,
+          nleaf, nleaf.spp,
+          marea, marea.spp, ncol = 2, nrow = 3, align = "hv",
+          common.legend = TRUE, legend = "right", labels = "AUTO",
+          font.label = list(size = 18, face = "bold"))
 dev.off()
 
 ##########################################################################
 ## Figure 2: Leaf biochemistry
 ##########################################################################
-png("../working_drafts/figs/NxS_fig3_leafbiochem.png",
-    width = 10, height = 8, units = 'in', res = 600)
-ggarrange(a.area, vcmax, jmax, jmax.vcmax,
-          ncol = 2, nrow = 2, common.legend = TRUE,
-          align = "v", legend = "right", labels = "AUTO",
-          font.label = list(size = 18, face = "bold")) %>%
-  annotate_figure(bottom = text_grob(
-    expression(bold("Soil nitrogen (μg N g"^"-1"~"resin day"^"-1"~")")),
-    size = 18))
+png("../working_drafts/figs/NxS_fig2_leafbiochem.png",
+    width = 16, height = 12, units = 'in', res = 600)
+ggarrange(a400, a400.spp, a400.narea,
+          vcmax, vcmax.spp, vcmax.narea,
+          jmax, jmax.spp, jmax.narea,
+          ncol = 3, nrow = 3, align = "hv",
+          common.legend = TRUE, legend = "right", labels = "AUTO",
+          font.label = list(size = 18, face = "bold"))
 dev.off()
 
 ##########################################################################
-## Figure 3: PNUE/iWUE tradeoffs
+## Figure S2: leaf N allocation
 ##########################################################################
-png("../working_drafts/figs/NxS_fig4_pnueiwue.png",
-    width = 10, height = 8, units = 'in', res = 600)
-ggarrange(pnue, chi, narea.gs, vcmax.gs, ncol = 2, nrow = 2, 
-          common.legend = TRUE, align = "v", legend = "right", 
-          labels = "AUTO", font.label = list(size = 18, face = "bold")) %>%
-  annotate_figure(bottom = text_grob(
-    expression(bold("Soil nitrogen (μg N g"^"-1"~"resin day"^"-1"~")")),
-    size = 18))
+png("../working_drafts/figs/NxS_figS2_leafn_allocation.png",
+    width = 12, height = 16, units = 'in', res = 600)
+ggarrange(p.rubisco, p.rubisco.spp,
+          p.bioenergetics, p.bio.spp,
+          p.photo, p.photo.spp,
+          p.structure, p.str.spp,
+          ncol = 2, nrow = 4, align = "hv",
+          common.legend = TRUE, legend = "right", labels = "AUTO",
+          font.label = list(size = 18, face = "bold"))
 dev.off()
 
 ##########################################################################
-## Figure 4: Whole plant measurements
+## Figure 3: PNUE/iWUE 
 ##########################################################################
-png("../working_drafts/figs/NxS_fig5_wp.png",
-    width = 10, height = 4.5, units = 'in', res = 600)
-ggarrange(ba, rgr, ncol = 2, nrow = 1, common.legend = TRUE,
-          align = "v", legend = "right", labels = "AUTO",
-          font.label = list(size = 18, face = "bold")) %>%
-  annotate_figure(bottom = text_grob(
-                    expression(
-                      bold("Soil nitrogen (μg N g"^"-1"~"resin day"^"-1"~")")),
-                    size = 18))
+png("../working_drafts/figs/NxS_fig3_pnueiwue.png",
+    width = 16, height = 16, units = 'in', res = 600)
+ggarrange(chi, chi.spp, chi.narea, 
+          pnue.plot, pnue.spp, blank.plot,
+          narea.chi.plot, narea.chi.spp, blank.plot,
+          vcmax.chi, vcmax.chi.spp, vcmax.chi.narea,
+          ncol = 3, nrow = 4, align = "hv",
+          common.legend = TRUE, legend = "right", 
+          labels = c("A", "B", "C", "D", "E", NA, "F", "G", NA,
+                     "H", "I", "J"),
+          font.label = list(size = 18, face = "bold"))
 dev.off()
-
-
-##########################################################################
-## Presentation Fig. 1: Leaf N and net photosynthesis
-##########################################################################
-ggarrange(narea, a.area, ncol = 2, nrow = 1, common.legend = TRUE,
-          align = "hv", legend = "right", labels = "AUTO",
-          font.label = list(size = 18, face = "bold")) %>%
-  annotate_figure(bottom = text_grob(
-    expression(
-      bold("Soil nitrogen (μg N g"^"-1"~"resin day"^"-1"~")")),
-    size = 15)) %>%
-  ggexport(filename = "../working_drafts/figs/NxS_talkfig1_leafNphoto.jpg", 
-           width = 6000, height = 2250, res = 600)
-
-
-##########################################################################
-## Presentation Fig. 2: PNUE, iWUE
-##########################################################################
-ggarrange(pnue, chi, ncol = 2, nrow = 1, common.legend = TRUE,
-          align = "hv", legend = "right", labels = "AUTO",
-          font.label = list(size = 18, face = "bold")) %>%
-  annotate_figure(bottom = text_grob(
-    expression(
-      bold("Soil nitrogen (μg N g"^"-1"~"resin day"^"-1"~")")),
-    size = 15)) %>%
-  ggexport(filename = "../working_drafts/figs/NxS_talkfig2_pnueiwue.jpg", 
-           width = 6000, height = 2250, res = 600)
-
-##########################################################################
-## Presentation Fig. 3: Narea:gs
-##########################################################################
-ggarrange(narea.gs, vcmax.gs, ncol = 2, nrow = 1, common.legend = TRUE,
-          align = "hv", legend = "right", labels = "AUTO",
-          font.label = list(size = 18, face = "bold")) %>%
-  annotate_figure(bottom = text_grob(
-    expression(
-      bold("Soil nitrogen (μg N g"^"-1"~"resin day"^"-1"~")")),
-    size = 15)) %>%
-  ggexport(filename = "../working_drafts/figs/NxS_talkfig3_nareags.jpg", 
-           width = 6500, height = 2550, res = 600)
-
-
-
