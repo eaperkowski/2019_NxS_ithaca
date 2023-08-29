@@ -10,5 +10,4 @@ The repository is structured into three main folders: "data", "scripts", and "ra
   - `raw_licor_files`: unedited .csv files exported from LI-6800. All column heading metadata can be found on the LI-COR website.
 
 ## Zenodo DOI
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7500343.svg)](https://doi.org/10.5281/zenodo.7500343)
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8299010.svg)](https://doi.org/10.5281/zenodo.8299010)
