@@ -7,23 +7,16 @@ myc.status,"mycorrhizal type. assumed, not measured",N/A
 soil.no3n.norm,"plot-average nitrate-N concentration, normalized",μg N per g resin per day
 soil.nh4n.norm,"plot-average ammonium-N concentration, normalized",μg N per g resin per day
 soil.n.norm,"plot-average plant-available N concentration ([NO3-N] + [NH4-N]), normalized",mg L-1
-mineral.pH,0-15 cm soil pH,N/A
+mineral.pH,0-10 cm soil pH,N/A
 leaf.n,leaf nitrogen content per unit leaf biomass (Nmass),gN g-1 biomass
 marea,soil nitrate-N concentration,g biomass per m^2 leaf
 narea,leaf nitrogen content per unit leaf area (Narea),gN per m^2 leaf
-p.rubisco,fraction of leaf nitrogen content allocated to Rubisco,gN in Rubisco gN^-1 leaf
-p.bioe,fraction of leaf nitrogen content allocated to bioenergetics,gN in bioenergetics gN^-1 leaf
-p.structure,fraction of leaf nitrogen content allocated to structure,gN in structure gN^-1 leaf
-p.photo,fraction of leaf nitrogen content allocated to photosynthesis,gN in structure gN^-1 leaf
 leaf.temp,leaf temperature of CO2 response curve,degC
 a400,net photosynthesis rate at 400 μmol mol-1,μmol m-2 s-1
 vcmax25,"maximum Rubisco carboxylation rate, standardized to 25degC",μmol m-2 s-1
 jmax25,"maximum RuBP regeneration rate, standardized to 25degC",μmol m-2 s-1
 jmax.vcmax,ratio of jmax25 to vcmax25,unitless
-gsw,stomatal conductance to water,mol m-2 s-1
 chi,isotope-derived ratio of intercellular CO2 to atmospheric CO2,unitless
-stom.lim,stomatal limitation,unitless
 pnue,photosynthetic nitrogen use efficiency,µmol CO2 mol N-1 s-1
-iwue,intrinsic water use efficiency (gas exchange based),μmol CO2 mol-1 H2O
 vcmax.chi,ratio of vcmax (temp unstandardized) to leaf Ci:Ca (chi),μmol m-2 s-1
 narea.chi,ratio of Narea (temp unstandardized) to leaf Ci:Ca (chi),gN per m^2 leaf

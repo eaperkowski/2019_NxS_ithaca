@@ -3,9 +3,9 @@ This repository contains data relevant to an experiment conducted in 2019 in an 
 
 The repository is structured into three main folders: "data", "scripts", and "raw_licor_files":
 
-  - `data`: contains the compiled datasheet used for the manuscript (`2019_NxS_datasheet.csv`), the metadata file for the compiled datasheet (`2019_NxS_datasheet_meta.csv`), and a marginal mean file (`2019_NxS_figs_emmeanOutputs.csv`)used to generate compact lettering in the `scripts/2019_NxS_plots.R` file.
+  - `data`: contains the compiled datasheet used for the manuscript (`2019_NxS_datasheet.csv`) and the metadata file for the compiled datasheet (`2019_NxS_datasheet_meta.csv`).
   
-  - `scripts`: contains R scripts for all data analysis and figuremaking. Includes all analyses and plots for both the main manuscript and the supplement
+  - `scripts`: contains R scripts for all data analysis. Includes all analyses for both the main manuscript (`2019_NxS_analyses.R`) and the supplemental information (`2019_NxS_supp_analyses.R`).
   
   - `raw_licor_files`: unedited .csv files exported from LI-6800. All column heading metadata can be found on the LI-COR website.
 
