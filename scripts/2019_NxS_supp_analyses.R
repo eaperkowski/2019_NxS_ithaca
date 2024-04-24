@@ -24,16 +24,38 @@ data <- read.csv("../data/2019_NxS_datasheet.csv", stringsAsFactors = FALSE,
                         "no.s"))
 
 ##########################################################################
+## Import and clean soil dataset
+##########################################################################
+soils <- data %>% group_by(site, n.trt, s.trt) %>%
+  dplyr::summarize(plot.n = mean(soil.n.norm),
+                   plot.pH = mean(mineral.pH),
+                   plot.no3n = mean(soil.no3n.norm),
+                   plot.nh4n = mean(soil.nh4n.norm)) %>%
+  mutate(n.trt = factor(n.trt, levels = c("no.n", "n.added")),
+         s.trt = factor(s.trt, levels = c("no.s", "s.added")),
+         trt = str_c(n.trt, "_", s.trt),
+         trt = factor(trt, levels = c("no.n_s.added",
+                                      "no.n_no.s",
+                                      "n.added_no.s",
+                                      "n.added_s.added")))
+
+soils.data.total <- read.csv("../data/2019_NxS_resinbag_datasheet_rep.csv") %>%
+  mutate(n.trt = ifelse(treatment == "AS" | treatment == "NO3", "n.added",
+                        "no.n"),
+         s.trt = ifelse(treatment == "AS" | treatment == "S", "s.added",
+                        "no.s"),
+         n.trt = factor(n.trt, levels = c("no.n", "n.added")),
+         s.trt = factor(s.trt, levels = c("no.s", "s.added")))
+
+##########################################################################
 # Leaf temp. effect on Anet - linear regression
 ##########################################################################
 data$a400[data$a400 < 0.2] <- NA
 
-a400 <- lmer(sqrt(a400) ~ leaf.temp + (1 | nrcs.code) + (1 | site), 
-             data = subset(data, nrcs.code == "ACRU" |
-                             nrcs.code == "ACSA" |
-                             nrcs.code == "QURU" |
-                             nrcs.code == "FAGR" |
-                             nrcs.code == "FRAM"))
+a400 <- lmer(sqrt(a400) ~ leaf.temp + (1 | site), 
+             data = subset(data, nrcs.code == "ACSA3"))
+
+head(data)
 
 # Check model assumptions
 plot(a400)
@@ -52,24 +74,15 @@ Anova(a400)
 ##########################################################################
 a400.nls <- nls(formula = log(a400) ~ a + b*leaf.temp + c*(leaf.temp^2),
                 start = list(a = 9.422, b = -0.572, c = 0.0099),
-                data = subset(data, nrcs.code == "ACRU" |
-                                nrcs.code == "ACSA" |
-                                nrcs.code == "QURU" |
-                                nrcs.code == "FAGR" |
-                                nrcs.code == "FRAM"))
+                data = subset(data, nrcs.code == "ACSA3"))
 plot(residuals(a400.nls))
 coef(a400.nls)
 
 ##########################################################################
 # Leaf temp. effect on gsw - linear regression
 ##########################################################################
-gs400 <- lmer(log(gsw) ~ leaf.temp + (1 | nrcs.code) +
-                (1 | site), 
-              data = subset(data, nrcs.code == "ACRU" |
-                              nrcs.code == "ACSA" |
-                              nrcs.code == "QURU" |
-                              nrcs.code == "FAGR" |
-                              nrcs.code == "FRAM"))
+gs400 <- lmer(log(gsw) ~ leaf.temp + (1 | site), 
+              data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
 plot(gs400)
@@ -90,6 +103,249 @@ gs400.nls <- nls(formula = log(gsw) ~ a + b*leaf.temp + c*(leaf.temp^2),
                  start = list(a = -0.17, b = -0.18, c = 0.0027),
                  data = data)
 coef(gs400.nls)
+
+##########################################################################
+## Soil N variance across plots (Table S4; Fig S2)
+##########################################################################
+table_s2 <- soils.data.total %>%
+  group_by(site, n.trt, s.trt) %>%
+  summarize(plot.n.mean = mean(totalN.normalized, na.rm = TRUE),
+            plot.n.count = n(),
+            plot.n.se = plot.n.mean / sqrt(plot.n.count),
+            plot.n.lci = plot.n.mean - (1.96 * plot.n.se),
+            plot.n.uci = plot.n.mean + (1.96 * plot.n.se)) %>%
+  mutate(trt = str_c(n.trt, "_", s.trt))
+
+soils.data.total$totalN.normalized[c(3,19)] <- NA
+
+soiln_trt <- soils.data.total %>%
+  group_by(n.trt, s.trt) %>%
+  summarize(plot.n.mean = mean(totalN.normalized, na.rm = TRUE),
+            plot.n.count = n(),
+            plot.n.se = plot.n.mean / sqrt(plot.n.count),
+            plot.n.lci = plot.n.mean - (1.96 * plot.n.se),
+            plot.n.uci = plot.n.mean + (1.96 * plot.n.se),
+            plot.no3.mean = mean(no3.normalized, na.rm = TRUE),
+            plot.no3.se = plot.no3.mean / sqrt(plot.n.count),
+            plot.no3.lci = plot.no3.mean - (1.96 * plot.no3.se),
+            plot.no3.uci = plot.no3.mean + (1.96 * plot.no3.se),
+            plot.nh4.mean = mean(nh4.normalized, na.rm = TRUE),
+            plot.nh4.se = plot.nh4.mean / sqrt(plot.n.count),
+            plot.nh4.lci = plot.nh4.mean - (1.96 * plot.nh4.se),
+            plot.nh4.uci = plot.nh4.mean + (1.96 * plot.nh4.se)) %>%
+  mutate(trt = str_c(n.trt, "_", s.trt),
+         trt = factor(trt, levels = c("no.n_s.added", "no.n_no.s", 
+                      "n.added_no.s", "n.added_s.added"))) %>%
+  dplyr::select(-plot.n.count)
+
+##########################################################################
+## Treatment - soil N
+##########################################################################
+nitrogen <- lmer(plot.n ~ n.trt * s.trt + (1 | site), 
+                 data = soils)
+
+# Check model assumptions
+plot(nitrogen)
+qqnorm(residuals(nitrogen))
+qqline(residuals(nitrogen))
+hist(residuals(nitrogen))
+shapiro.test(residuals(nitrogen))
+outlierTest(nitrogen)
+
+# Model output
+summary(nitrogen)
+Anova(nitrogen)
+r.squaredGLMM(nitrogen)
+
+# Post-hoc tests
+emmeans(nitrogen, pairwise~n.trt)
+
+# Plot prep
+n_compact <- cld(emmeans(nitrogen, pairwise~n.trt*s.trt),
+                 Letters = letters) %>% 
+  data.frame() %>%
+  mutate(.group = trimws(.group, "both"),
+         trt = str_c(n.trt, s.trt, sep = "_"),
+         trt = factor(trt, levels = c("no.n_s.added", "no.n_no.s", 
+                                      "n.added_no.s", "n.added_s.added")))
+
+##########################################################################
+## Treatment - soil pH
+##########################################################################
+pH <- lmer(plot.pH ~ n.trt * s.trt + (1 | site), data = soils)
+
+# Check model assumptions
+plot(pH)
+qqnorm(residuals(pH))
+qqline(residuals(pH))
+hist(residuals(pH))
+shapiro.test(residuals(pH))
+outlierTest(pH)
+
+# Model output
+summary(pH)
+Anova(pH)
+r.squaredGLMM(pH)
+
+# Post-hoc tests
+emmeans(pH, pairwise~s.trt*n.trt)
+emmeans(pH, pairwise~s.trt)
+
+# Plot prep
+pH_compact <- cld(emmeans(pH, pairwise~n.trt*s.trt),
+                  Letters = letters, alpha = 0.1) %>% 
+  data.frame() %>%
+  mutate(.group = trimws(.group, "both"),
+         trt = str_c(n.trt, s.trt, sep = "_"),
+         trt = factor(trt, levels = c("no.n_s.added", "no.n_no.s", 
+                                      "n.added_no.s", "n.added_s.added")))
+
+##########################################################################
+## Treatment - soil no3n
+##########################################################################
+no3n <- lmer(plot.no3n~ n.trt * s.trt + (1 | site), 
+             data = soils)
+
+# Check model assumptions
+plot(no3n)
+qqnorm(residuals(no3n))
+qqline(residuals(no3n))
+hist(residuals(no3n))
+shapiro.test(residuals(no3n))
+outlierTest(no3n)
+
+# Model output
+summary(no3n)
+Anova(no3n)
+r.squaredGLMM(no3n)
+
+# Post-hoc tests
+cld(emmeans(no3n, pairwise~n.trt*s.trt))
+emmeans(no3n, pairwise~n.trt)
+
+# Plot prep
+no3n_compact <- cld(emmeans(no3n, pairwise~n.trt*s.trt),
+                    Letters = letters) %>% 
+  data.frame() %>%
+  mutate(.group = trimws(.group, "both"),
+         trt = str_c(n.trt, s.trt, sep = "_"),
+         trt = factor(trt, levels = c("no.n_s.added", "no.n_no.s", 
+                                      "n.added_no.s", "n.added_s.added")))
+
+##########################################################################
+## Treatment - soil nh4
+##########################################################################
+nh4n <- lmer(plot.nh4n ~ n.trt * s.trt + (1 | site), 
+             data = soils)
+
+# Check model assumptions
+plot(nh4n)
+qqnorm(residuals(nh4n))
+qqline(residuals(nh4n))
+hist(residuals(nh4n))
+shapiro.test(residuals(nh4n))
+outlierTest(nh4n)
+
+# Model output
+summary(nh4n)
+Anova(nh4n)
+r.squaredGLMM(nh4n)
+
+# Post-hoc tests
+cld(emmeans(nh4n, pairwise~n.trt*s.trt), Letters = letters)
+emmeans(nh4n, pairwise~n.trt)
+
+# Plot prep
+nh4_compact <- cld(emmeans(nh4n, pairwise~n.trt*s.trt),
+                   Letters = letters) %>% 
+  data.frame() %>%
+  mutate(.group = trimws(.group, "both"),
+         trt = str_c(n.trt, s.trt, sep = "_"),
+         trt = factor(trt, levels = c("no.n_s.added", "no.n_no.s", 
+                                      "n.added_no.s", "n.added_s.added")))
+
+##########################################################################
+## Figure S2
+##########################################################################
+# n_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.n.mean)) +
+#   geom_point(size = 5) +
+#   geom_errorbar(aes(ymin = plot.n.lci, ymax = plot.n.uci),
+#                 width = 0.5, linewidth= 1) +
+#   geom_text(data = n_compact, aes(x = trt, y = 30, label = .group),
+#             size = 6, fontface = "bold") +
+#   scale_y_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+#   scale_x_discrete(labels = c("S", "C", 
+#                               expression("NO"["3"]),
+#                               "AS")) +
+#   labs(x = "Treatment",
+#        y = expression(bold("Soil N ("*mu*"g N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+#   theme_bw(base_size = 18) +
+#   theme(axis.title = element_text(face = "bold"),
+#         legend.title = element_text(face = "bold"),
+#         legend.text = element_text(hjust = 0),
+#         panel.grid.minor.y = element_blank())
+# 
+# pH_plot <- ggplot(data = pH_compact, aes(x = trt, y = emmean)) +
+#   geom_point(size = 5) +
+#   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+#                 width = 0.5, linewidth = 1) +
+#   geom_text(aes(x = trt, y = 5.5, label = .group),
+#             size = 6, fontface = "bold") +
+#   scale_y_continuous(limits = c(3.5, 5.5), breaks = seq(3.5, 5.5, 0.5)) +
+#   scale_x_discrete(labels = c("S", "C", 
+#                               expression("NO"["3"]),
+#                               "AS")) +
+#   labs(x = "Treatment",
+#        y = "Soil pH") +
+#   theme_bw(base_size = 18) +
+#   theme(axis.title = element_text(face = "bold"),
+#         legend.title = element_text(face = "bold"),
+#         legend.text = element_text(hjust = 0),
+#         panel.grid.minor.y = element_blank())
+# 
+# no3_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.no3.mean)) +
+#   geom_point(size = 5) +
+#   geom_errorbar(aes(ymin = plot.no3.lci, ymax = plot.no3.uci),
+#                 width = 0.5, linewidth= 1) +
+#   geom_text(data = no3n_compact, aes(x = trt, y = 30, label = .group),
+#             size = 6, fontface = "bold") +
+#   scale_y_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+#   scale_x_discrete(labels = c("S", "C", 
+#                               expression("NO"["3"]),
+#                               "AS")) +
+#   labs(x = "Treatment",
+#        y = expression(bold("Soil NO"["3"]*"-N ("*mu*"g NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+#   theme_bw(base_size = 18) +
+#   theme(axis.title = element_text(face = "bold"),
+#         legend.title = element_text(face = "bold"),
+#         legend.text = element_text(hjust = 0),
+#         panel.grid.minor.y = element_blank())
+# 
+# nh4_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.nh4.mean)) +
+#   geom_point(size = 5) +
+#   geom_errorbar(aes(ymin = plot.nh4.lci, ymax = plot.nh4.uci),
+#                 width = 0.5, linewidth= 1) +
+#   geom_text(data = nh4_compact, aes(x = trt, y = 10, label = .group),
+#             size = 6, fontface = "bold") +
+#   scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2.5)) +
+#   scale_x_discrete(labels = c("S", "C", 
+#                               expression("NO"["3"]),
+#                               "AS")) +
+#   labs(x = "Treatment",
+#        y = expression(bold("Soil NH"["4"]*"-N ("*mu*"g NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+#   theme_bw(base_size = 18) +
+#   theme(axis.title = element_text(face = "bold"),
+#         legend.title = element_text(face = "bold"),
+#         legend.text = element_text(hjust = 0),
+#         panel.grid.minor.y = element_blank())
+# 
+# 
+# png(filename = "../../nitrogen_pH/working_drafts/figs/NxS_figS2_treatment_soil.png",
+#     height = 10, width = 12, units = "in", res = 600)
+# ggpubr::ggarrange(n_plot, pH_plot, no3_plot, nh4_plot,
+#                   ncol = 2, nrow = 2, align = "hv")
+# dev.off()
+
 
 ##########################################################################
 ##########################################################################
@@ -1292,3 +1548,13 @@ r.squaredGLMM(vcmax.chi.nleaf)
 
 # Test Narea-Anet slope
 test(emtrends(vcmax.chi.nleaf, ~1, "narea"))
+
+
+
+
+
+
+
+
+
+
