@@ -7,6 +7,7 @@ library(emmeans)
 library(car)
 library(tidyverse)
 library(MuMIn)
+library(ggpubr)
 
 # Remove emmeans digit limiter
 emm_options(opt.digits = FALSE)
@@ -75,18 +76,21 @@ nmass.no3n.trend <- data.frame(emmeans(leaf.n.no3, ~1, "soil.no3n.norm",
                                        at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
-nmass.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = leaf.n/100)) +
-  geom_point(data = plot_data, aes(shape = treatment), size = 4, alpha = 0.75) +
+nmass.no3n.plot <- ggplot(data = plot_data, 
+                          aes(x = soil.no3n.norm, y = leaf.n/100)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
   geom_ribbon(data = nmass.no3n.trend, 
               aes(y = emmean/100,
                   ymin = lower.CL/100, ymax = upper.CL/100),
               alpha = 0.3) +
-  geom_smooth(data = nmass.no3n.trend, aes(y = emmean/100), size = 2, se = FALSE,
-              color = "black", method = 'lm', linetype = "dashed") +
+  geom_smooth(data = nmass.no3n.trend, aes(y = emmean/100), 
+              size = 2, se = FALSE, color = "black", method = 'lm', 
+              linetype = "dashed") +
   scale_x_continuous(limits = c(0, 25), 
                      breaks = seq(0, 25, 5)) +
-  scale_y_continuous(limits = c(0.015, 0.035), 
-                     breaks = seq(0.015, 0.035, 0.005)) +
+  scale_y_continuous(limits = c(0.016, 0.032), 
+                     breaks = seq(0.016, 0.032, 0.004)) +
   scale_shape_manual(values = c(21, 22, 23, 24),
                      labels = c("C" = "no N; no S",
                                 "NO3" = "+ N; no S",
@@ -172,7 +176,7 @@ narea.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = narea)) 
   geom_smooth(data = narea.no3n.trend, aes(y = emmean), size = 2, se = FALSE,
               color = "black", method = 'lm') +
   scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
-  scale_y_continuous(limits = c(0, 2.4), breaks = seq(0, 2.4, 0.6)) +
+  scale_y_continuous(limits = c(0, 3), breaks = seq(0, 3, 1)) +
   scale_shape_manual(values = c(21, 22, 23, 24),
                      labels = c("C" = "no N; no S",
                                 "NO3" = "+ N; no S",
@@ -271,8 +275,6 @@ vcmax.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = vcmax25)
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
 vcmax.no3n.plot
-
-
 
 ##########################################################################
 ## Jmax25 - soil NO3-N
@@ -387,14 +389,14 @@ chi.no3.trend <- data.frame(emmeans(chi.no3, ~1, "soil.no3n.norm",
                                     at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
-jmax.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = chi)) +
+chi.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = chi)) +
   geom_point(data = plot_data, aes(shape = treatment), size = 4, alpha = 0.75) +
   geom_ribbon(data = chi.no3.trend, 
               aes(y = emmean,
                   ymin = lower.CL, ymax = upper.CL),
               alpha = 0.3) +
   geom_smooth(data = chi.no3.trend, aes(y = emmean), size = 2, se = FALSE,
-              color = "black", method = 'lm') +
+              color = "black", method = 'lm', linetype = "dashed") +
   scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
   scale_y_continuous(limits = c(0.5, 1), breaks = seq(0.5, 1, 0.1)) +
   scale_shape_manual(values = c(21, 22, 23, 24),
@@ -407,14 +409,14 @@ jmax.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = chi)) +
        shape = "Treatment") +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   pubtheme
-jmax.no3n.plot
+chi.no3n.plot
 
 ##########################################################################
 ## PNUE - soil NO3-N
 ##########################################################################
 data$pnue[data$pnue < 0] <- NA
 
-pnue.no3 <- lmer(sqrt(pnue) ~ soil.no3n.norm + mineral.pH + (1 | site),
+pnue.no3 <- lmer(pnue ~ soil.no3n.norm + mineral.pH + (1 | site),
              data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
@@ -423,7 +425,7 @@ qqnorm(residuals(pnue.no3))
 qqline(residuals(pnue.no3))
 hist(residuals(pnue.no3))
 shapiro.test(residuals(pnue.no3))
-outlierTest(pnue)
+outlierTest(pnue.no3)
 
 # Model output
 summary(pnue.no3)
@@ -432,6 +434,23 @@ r.squaredGLMM(pnue.no3)
 
 # Pairwise comparisons
 test(emtrends(pnue.no3, ~1, var = "soil.no3n.norm"))
+
+# Plot
+pnue.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = pnue)) +
+  geom_point(data = plot_data, aes(shape = treatment), size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 25)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NO"["3"]*"-N (μg NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("PNUE (μmol CO"["2"]*" mol"^"-1"*"N s"^"-1"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+pnue.no3n.plot
 
 ##########################################################################
 ## Narea.chi - soil NO3-N
@@ -455,6 +474,34 @@ r.squaredGLMM(narea.chi.no3)
 # Post-hoc tests
 test(emtrends(narea.chi.no3, ~1, var = "soil.no3n.norm"))
 
+# Plot prep
+narea.chi.no3n.trend <- data.frame(emmeans(narea.chi.no3, ~1, "soil.no3n.norm", 
+                                       at = list(soil.no3n.norm = seq(0, 25, 0.1))))
+
+# Plot
+narea.chi.no3n.plot <- ggplot(data = plot_data, 
+                              aes(x = soil.no3n.norm, y = narea.chi)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = narea.chi.no3n.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.3) +
+  geom_smooth(data = narea.chi.no3n.trend, aes(y = emmean), size = 2, se = FALSE,
+              color = "black", method = 'lm') +
+  scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
+  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NO"["3"]*"-N (μg NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("N"["area"]*":"*chi*" (gN m"["leaf"]*""^"-2"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+narea.chi.no3n.plot
+
 ##########################################################################
 ## Vcmax25.chi - soil NO3-N
 ##########################################################################
@@ -477,15 +524,46 @@ Anova(vcmax.chi.no3)
 r.squaredGLMM(vcmax.chi.no3)
 
 # Post-hoc tests
-test(emtrends(vcmax.chi, ~1, var = "soil.no3n.norm"))
+test(emtrends(vcmax.chi.no3, ~1, var = "soil.no3n.norm"))
+
+# Plot prep
+vcmax.chi.no3n.trend <- data.frame(
+  emmeans(vcmax.chi.no3, ~1, "soil.no3n.norm", 
+          at = list(soil.no3n.norm = seq(0, 25, 0.1))))
+
+# Plot
+vcmax.chi.no3n.plot <- ggplot(data = plot_data, 
+                          aes(x = soil.no3n.norm, y = vcmax.chi)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = vcmax.chi.no3n.trend, 
+              aes(y = emmean,
+                  ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.3) +
+  geom_smooth(data = vcmax.chi.no3n.trend, aes(y = emmean), 
+              size = 2, se = FALSE, color = "black", method = 'lm') +
+  scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
+  scale_y_continuous(limits = c(-8, 120), breaks = seq(0, 120, 30)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NO"["3"]*"-N (μg NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("V"["cmax25"]*":"*chi*" (μmol m"^"-2"*" s"^"-1"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+vcmax.chi.no3n.plot
 
 
 ##########################################################################
+
+
 ##########################################################################
 ## Ammonium-specific analyses
 ##########################################################################
 ##########################################################################
-
 
 ##########################################################################
 ## Nleaf
@@ -509,6 +587,26 @@ r.squaredGLMM(leaf.n.nh4)
 # Post-hoc tests
 test(emtrends(leaf.n.nh4, ~1, var = "soil.nh4n.norm"))
 
+# Plot
+nmass.nh4n.plot <- ggplot(data = plot_data, 
+                          aes(x = soil.nh4n.norm, y = leaf.n/100)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0.016, 0.032), 
+                     breaks = seq(0.016, 0.032, 0.004)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("N"["mass"]*" (gN g"["dry_mass"]*""^"-1"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+nmass.nh4n.plot
+
 ##########################################################################
 ## Leaf mass per area
 ##########################################################################
@@ -530,6 +628,34 @@ r.squaredGLMM(marea.nh4)
 
 # Post-hoc tests
 test(emtrends(marea.nh4, ~1, var = "soil.nh4n.norm"))
+
+# Plot prep
+marea.nh4n.trend <- data.frame(emmeans(marea.nh4, ~1, "soil.nh4n.norm", 
+                                       at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
+
+# Plot
+marea.nh4n.plot <- ggplot(data = plot_data, 
+                          aes(x = soil.nh4n.norm, y = marea)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = marea.nh4n.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.3) +
+  geom_smooth(data = marea.nh4n.trend, aes(y = emmean), 
+              size = 2, se = FALSE, color = "black", method = 'lm') +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0, 120), breaks = seq(0, 120, 30)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("M"[area]*" (g"["dry_mass"]*" m"["leaf"]*""^"-2"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+marea.nh4n.plot
 
 ##########################################################################
 ## Narea
@@ -553,6 +679,34 @@ r.squaredGLMM(narea.nh4)
 # Pairwise comparisons
 test(emtrends(narea.nh4, ~1, var = "soil.nh4n.norm"))
 
+# Plot prep
+narea.nh4n.trend <- data.frame(emmeans(narea.nh4, ~1, "soil.nh4n.norm", 
+                                       at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
+
+# Plot
+narea.nh4n.plot <- ggplot(data = plot_data, 
+                          aes(x = soil.nh4n.norm, y = narea)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = narea.nh4n.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.3) +
+  geom_smooth(data = narea.nh4n.trend, aes(y = emmean), 
+              size = 2, se = FALSE, color = "black", method = 'lm') +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0, 3), breaks = seq(0, 3, 1)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("N"[area]*" (g N m"["leaf"]*""^"-2"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+narea.nh4n.plot
+
 ##########################################################################
 ## Anet
 ##########################################################################
@@ -571,6 +725,23 @@ outlierTest(a400.nh4)
 summary(a400.nh4)
 Anova(a400.nh4)
 r.squaredGLMM(a400.nh4)
+
+# Plot
+a400.nh4n.plot <- ggplot(data = plot_data, aes(x = soil.nh4n.norm, y = a400)) +
+  geom_point(aes(shape = treatment), size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2.5)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("A"["net"]*" (μmol m"^"-2"*" s"^"-1"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+a400.nh4n.plot
 
 ##########################################################################
 ## Vcmax25
@@ -594,6 +765,23 @@ r.squaredGLMM(vcmax.nh4)
 # Pairwise comparisons
 test(emtrends(vcmax.nh4, ~1, var = "soil.nh4n.norm"))
 
+# Plot
+vcmax.nh4n.plot <- ggplot(data = plot_data, aes(x = soil.nh4n.norm, y = vcmax25)) +
+  geom_point(aes(shape = treatment), size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 25)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("V"["cmax25"]*" (μmol m"^"-2"*" s"^"-1"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+vcmax.nh4n.plot
+
 ##########################################################################
 ## Jmax25
 ##########################################################################
@@ -616,6 +804,22 @@ r.squaredGLMM(jmax.nh4)
 ## Pairwise comparisons
 test(emtrends(jmax, ~1, var = "soil.nh4n.norm"))
 
+# Plot
+jmax.nh4n.plot <- ggplot(data = plot_data, aes(x = soil.nh4n.norm, y = jmax25)) +
+  geom_point(aes(shape = treatment), size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0, 160), breaks = seq(0, 160, 40)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("J"["max25"]*" (μmol m"^"-2"*" s"^"-1"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+jmax.nh4n.plot
 
 ##########################################################################
 ## Jmax25:Vcmax25
@@ -635,6 +839,24 @@ outlierTest(vjmax.nh4)
 summary(vjmax.nh4)
 Anova(vjmax.nh4)
 r.squaredGLMM(vjmax.nh4)
+
+# Plot
+jvmax.nh4n.plot <- ggplot(data = plot_data, 
+                          aes(x = soil.nh4n.norm, y = jmax.vcmax)) +
+  geom_point(aes(shape = treatment), size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(1, 3), breaks = seq(1, 3, 0.5)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("J"["max25"]*": V"["cmax25"]*" (unitless)")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+jvmax.nh4n.plot
 
 ##########################################################################
 ## chi
@@ -658,13 +880,40 @@ r.squaredGLMM(chi.nh4)
 ## Pairwise comparisons
 test(emtrends(chi.nh4,  ~1, var = "soil.nh4n.norm"))
 
+# Plot prep
+chi.nh4.trend <- data.frame(emmeans(chi.nh4, ~1, "soil.nh4n.norm", 
+                                    at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
+
+# Plot
+chi.nh4n.plot <- ggplot(data = plot_data, 
+                        aes(x = soil.nh4n.norm, y = chi)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = chi.nh4.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.3) +
+  geom_smooth(data = chi.nh4.trend, aes(y = emmean), size = 2, se = FALSE,
+              color = "black", method = 'lm', linetype = "dashed") +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0.5, 1), breaks = seq(0.5, 1, 0.1)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold(chi*" (unitless)")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+chi.nh4n.plot
 
 ##########################################################################
 ## PNUE
 ##########################################################################
 data$pnue[data$pnue < 0] <- NA
 
-pnue.nh4 <- lmer(sqrt(pnue) ~ soil.nh4n.norm + mineral.pH + (1 | site),
+pnue.nh4 <- lmer(pnue ~ soil.nh4n.norm + mineral.pH + (1 | site),
              data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
@@ -682,6 +931,35 @@ r.squaredGLMM(pnue.nh4)
 
 # Pairwise comparisons
 test(emtrends(pnue.nh4, ~1, var = "soil.nh4n.norm"))
+
+
+# Plot prep
+pnue.nh4.trend <- data.frame(emmeans(pnue.nh4, ~1, "soil.nh4n.norm", 
+                                    at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
+
+# Plot
+pnue.nh4n.plot <- ggplot(data = plot_data, 
+                        aes(x = soil.nh4n.norm, y = pnue)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = pnue.nh4.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.3) +
+  geom_smooth(data = pnue.nh4.trend, aes(y = emmean), size = 2, se = FALSE,
+              color = "black", method = 'lm', linetype = "dashed") +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 25)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("PNUE (μmol CO"["2"]*" mol"^"-1"*"N s"^"-1"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+pnue.nh4n.plot
 
 ##########################################################################
 ## Narea.chi
@@ -705,11 +983,38 @@ r.squaredGLMM(narea.chi.nh4)
 # Post-hoc tests
 test(emtrends(narea.chi.nh4, ~1, var = "soil.nh4n.norm"))
 
+# Plot prep
+narea.chi.nh4n.trend <- data.frame(
+  emmeans(narea.chi.nh4, ~1, "soil.nh4n.norm", 
+          at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
+
+# Plot
+narea.chi.nh4n.plot <- ggplot(data = plot_data, 
+                              aes(x = soil.nh4n.norm, y = narea.chi)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = narea.chi.nh4n.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL),
+              alpha = 0.3) +
+  geom_smooth(data = narea.chi.nh4n.trend, aes(y = emmean), size = 2, se = FALSE,
+              color = "black", method = 'lm') +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("N"["area"]*":"*chi*" (gN m"["leaf"]*""^"-2"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+narea.chi.nh4n.plot
+
 ##########################################################################
 ## Vcmax25.chi
 ##########################################################################
-data$vcmax.chi[85] <- NA
-
 vcmax.chi.nh4 <- lmer(vcmax.chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
                   data = subset(data, nrcs.code == "ACSA3"))
 
@@ -727,4 +1032,65 @@ Anova(vcmax.chi.nh4)
 r.squaredGLMM(vcmax.chi.nh4)
 
 # Post-hoc tests
-test(emtrends(vcmax.chi.nh4, ~1, var = "soil.nh4n.norm"))   
+test(emtrends(vcmax.chi.nh4, ~1, var = "soil.nh4n.norm"))
+
+# Plot
+vcmax.chi.nh4n.plot <- ggplot(data = plot_data, 
+                          aes(x = soil.nh4n.norm, y = vcmax.chi)) +
+  geom_point(data = plot_data, aes(shape = treatment), 
+             size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
+  scale_y_continuous(limits = c(-8, 120), breaks = seq(0, 120, 30)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NH"["4"]*"-N (μg NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("V"["cmax25"]*":"*chi*" (μmol m"^"-2"*" s"^"-1"*")")),
+       shape = "Treatment") +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  pubtheme
+vcmax.chi.nh4n.plot
+
+##########################################################################
+## Make plots
+##########################################################################
+
+# Fig S3 - leaf N
+png("../../nitrogen_pH/working_drafts/figs/NxS_figS3_leafn_no3_nh4.png",
+    width = 10.5, height = 12, units = 'in', res = 600)
+ggarrange(narea.no3n.plot, narea.nh4n.plot,
+          nmass.no3n.plot, nmass.nh4n.plot,
+          marea.no3n.plot, marea.nh4n.plot,
+          ncol = 2, nrow = 3, align = "hv",
+          common.legend = TRUE, legend = "right",
+          labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)"),
+          font.label = list(size = 18, face = "bold"))
+dev.off()
+
+
+# Fig S4 - leaf gas exchange
+png("../../nitrogen_pH/working_drafts/figs/NxS_figS4_leafbiochem_no3_nh4.png",
+    width = 10.5, height = 12, units = 'in', res = 600)
+ggarrange(a400.no3n.plot, a400.nh4n.plot,
+          vcmax.no3n.plot, vcmax.nh4.plot,
+          jmax.no3n.plot, jmax.nh4n.plot,
+          ncol = 2, nrow = 3, align = "hv",
+          common.legend = TRUE, legend = "right", 
+          labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)"),
+          font.label = list(size = 18, face = "bold"))
+dev.off()
+
+# Fig S5 - nitrogen-water use tradeoffs
+png("../../nitrogen_pH/working_drafts/figs/NxS_figS5_pnueiwue.png",
+    width = 10.5, height = 16, units = 'in', res = 600)
+ggarrange(chi.no3n.plot, chi.nh4n.plot,
+          pnue.no3n.plot, pnue.nh4n.plot,
+          narea.chi.no3n.plot, narea.chi.nh4n.plot,
+          vcmax.chi.no3n.plot, vcmax.chi.nh4n.plot,
+          ncol = 2, nrow = 4, align = "hv",
+          common.legend = TRUE, legend = "right", 
+          labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)", "(g)", "(h)"),
+          font.label = list(size = 18, face = "bold"))
+dev.off()
