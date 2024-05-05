@@ -30,7 +30,7 @@ pubtheme <- theme_bw(base_size = 16) +
 cbbPalette <- c("#FFFFFF", "#DDAA33", "#BB5566", "#004488", "#000000")
 
 ## Load data and marginal mean + SE summary sheet
-data <- read.csv("../../2019_NxS_ithaca/data/2019_NxS_datasheet.csv",
+data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
                  na.strings = "NA") %>%
   mutate(anet.mass = a400 / marea,
