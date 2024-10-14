@@ -369,7 +369,4 @@ r.squaredGLMM(vcmax.chi)
 
 # Post-hoc tests
 test(emtrends(vcmax.chi, ~1, var = "soil.n.norm"))
-
-
-
     

@@ -5,7 +5,6 @@
 library(tidyverse)
 library(dplyr)
 library(ggpubr)
-library(gridExtra)
 library(lme4)
 library(emmeans)
 library(car)
@@ -26,9 +25,6 @@ pubtheme <- theme_bw(base_size = 16) +
         panel.grid.minor.y = element_blank(),
         legend.text.align = 0)
 
-## Add colorblind friendly palette
-cbbPalette <- c("#FFFFFF", "#DDAA33", "#BB5566", "#004488", "#000000")
-
 ## Load data and marginal mean + SE summary sheet
 data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
@@ -45,13 +41,6 @@ data$a400[data$a400 < 0.2] <- NA
 data$anet.mass[data$a400 < 0.2] <- NA
 data$pnue[data$pnue < 0] <- NA
 data$vcmax.chi[c(85)] <- NA
-
-## Create blank plot as spacer plot
-blank.plot <- ggplot() + 
-  theme_bw() +
-  theme(panel.background = element_rect(color = "white",
-                                        fill = "white"),
-        panel.border = element_rect(color = "white"))
 
 
 ##########################################################################
@@ -710,7 +699,6 @@ vcmax.chi.ph.plot <- ggplot(data = plot_data,
   pubtheme
 vcmax.chi.ph.plot
 
-
 ##########################################################################
 ## Vcmax-chi - leaf N
 ##########################################################################
@@ -745,8 +733,8 @@ vcmax.chi.narea
 ##########################################################################
 ## Figure 1: leaf N
 ##########################################################################
-png("../working_drafts/figs/NxS_fig1_leafn.png",
-    width = 10, height = 12, units = 'in', res = 600)
+# png("[insert path here]",
+#     width = 10, height = 12, units = 'in', res = 600)
 ggarrange(narea.plot, narea.ph.plot,
           nmass.plot, nmass.ph.plot,
           marea.plot, marea.ph.plot,
@@ -754,13 +742,13 @@ ggarrange(narea.plot, narea.ph.plot,
           common.legend = TRUE, legend = "right", 
           labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)"),
           font.label = list(size = 18, face = "bold"))
-dev.off()
+# dev.off()
 
 ##########################################################################
 ## Figure 2: Leaf biochemistry
 ##########################################################################
-png("../working_drafts/figs/NxS_fig2_leafbiochem.png",
-    width = 13, height = 11, units = 'in', res = 600)
+# png("[insert path here]",
+#     width = 13, height = 11, units = 'in', res = 600)
 ggarrange(a400.plot, a400.ph.plot, a400.narea,
           vcmax.plot, vcmax.ph.plot, vcmax.narea,
           jmax.plot, jmax.ph.plot, jmax.narea,
@@ -769,32 +757,32 @@ ggarrange(a400.plot, a400.ph.plot, a400.narea,
           labels = c("(a)", "(b)", "(c)", "(d)", "(e)",
                      "(f)", "(g)", "(h)", "(i)"),
           font.label = list(size = 18, face = "bold"))
-dev.off()
+# dev.off()
 
 ##########################################################################
 ## Figure 3: PNUE/iWUE 
 ##########################################################################
-png("../working_drafts/figs/NxS_fig3_pnueiwue.png",
-    width = 10, height = 15, units = 'in', res = 600)
+# png("[insert path here]",
+#     width = 10, height = 15, units = 'in', res = 600)
 ggarrange(chi, chi.ph.plot,
           pnue.plot, pnue.ph.plot, 
           narea.chi.plot, narea.chi.ph.plot,
-          vcmax.chi.plot, vcmax.chi.plot,
+          vcmax.chi.plot, vcmax.chi.ph.plot,
           ncol = 2, nrow = 4, align = "hv",
           common.legend = TRUE, legend = "right", 
           labels = c("(a)", "(b)", "(c)", "(d)", 
                      "(e)", "(f)", "(g)", "(h)"),
           font.label = list(size = 18, face = "bold"))
-dev.off()
+# dev.off()
 
 ##########################################################################
 ## Figure 3: Relationships between Narea and chi/vcmax:chi
 ##########################################################################
-png("../working_drafts/figs/NxS_fig4_narea_chi_vcmaxchi.png",
-    width = 6, height = 8, units = 'in', res = 600)
+# png("[insert path here]",
+#     width = 6, height = 8, units = 'in', res = 600)
 ggarrange(chi.narea, vcmax.chi.narea,
           ncol = 1, nrow = 2, align = "hv",
           common.legend = TRUE, legend = "right", 
           labels = c("(a)", "(b)"),
           font.label = list(size = 18, face = "bold"))
-dev.off()
+# dev.off()
