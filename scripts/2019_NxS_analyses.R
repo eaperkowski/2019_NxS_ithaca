@@ -14,7 +14,10 @@ emm_options(opt.digits = FALSE)
 # Import datasheet
 data <- read.csv("../data/2019_NxS_datasheet.csv", stringsAsFactors = FALSE,
                  na.strings = "NA") %>%
-  mutate(anet.mass = a400 / marea,
+  mutate(iwue = a400 / gsw,
+         narea.gs = narea / gsw,
+         vcmax.gs = vcmax25 / gsw,
+         anet.mass = a400 / marea,
          vcmax.mass = vcmax25 / marea,
          jmax.mass = jmax25 / marea,
          n.trt = ifelse(treatment == "AS" | treatment == "NO3", "n.added",
@@ -127,6 +130,47 @@ outlierTest(anet.narea)
 summary(anet.narea)
 Anova(anet.narea)
 r.squaredGLMM(anet.narea)
+
+##########################################################################
+## gsw - soil N
+##########################################################################
+gsw <- lmer(log(gsw) ~ soil.n.norm + mineral.pH + (1 | site),
+             data = subset(data, nrcs.code == "ACSA3"))
+
+# Check model assumptions
+plot(gsw)
+qqnorm(residuals(gsw))
+qqline(residuals(gsw))
+hist(residuals(gsw))
+shapiro.test(residuals(gsw))
+outlierTest(gsw)
+
+# Model output
+summary(gsw)
+Anova(gsw)
+r.squaredGLMM(gsw)
+
+##########################################################################
+## gsw - Narea
+##########################################################################
+gsw.narea <- lmer(log(gsw) ~ narea +  (1 | site), 
+                   data = subset(data, nrcs.code == "ACSA3"))
+
+# Check model assumptions
+plot(gsw.narea)
+qqnorm(residuals(gsw.narea))
+qqline(residuals(gsw.narea))
+hist(residuals(gsw.narea))
+shapiro.test(residuals(gsw.narea))
+outlierTest(gsw.narea)
+
+# Model output
+summary(gsw.narea)
+Anova(gsw.narea)
+r.squaredGLMM(gsw.narea)
+
+# Post-hoc comparison
+test(emtrends(gsw.narea, ~1, "narea"))
 
 ##########################################################################
 ## Vcmax25 - soil N
@@ -323,6 +367,30 @@ r.squaredGLMM(pnue)
 
 # Pairwise comparisons
 test(emtrends(pnue, ~1, var = "soil.n.norm"))
+
+##########################################################################
+## iWUE - soil N
+##########################################################################
+iwue <- lmer(iwue ~ soil.n.norm + mineral.pH + (1 | site),
+            data = subset(data, nrcs.code == "ACSA3"))
+
+# Check model assumptions
+plot(iwue)
+qqnorm(residuals(iwue))
+qqline(residuals(iwue))
+hist(residuals(iwue))
+shapiro.test(residuals(iwue))
+outlierTest(iwue)
+
+# Model output
+summary(iwue)
+Anova(iwue)
+r.squaredGLMM(iwue)
+
+ggplot(data = subset(data, nrcs.code == "ACSA3"),
+       aes(x = pnue, y = iwue)) +
+  geom_point() +
+  geom_smooth(method = "lm")
 
 ##########################################################################
 ## Narea.chi - soil N
