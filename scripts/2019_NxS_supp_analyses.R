@@ -203,7 +203,7 @@ pH_compact <- cld(emmeans(pH, pairwise~n.trt*s.trt),
 ##########################################################################
 ## Treatment - soil no3n
 ##########################################################################
-no3n <- lmer(plot.no3n~ n.trt * s.trt + (1 | site), 
+no3n <- lmer(plot.no3n ~ n.trt * s.trt + (1 | site), 
              data = soils)
 
 # Check model assumptions
@@ -267,85 +267,86 @@ nh4_compact <- cld(emmeans(nh4n, pairwise~n.trt*s.trt),
 ##########################################################################
 ## Figure S2
 ##########################################################################
-# n_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.n.mean)) +
-#   geom_point(size = 5) +
-#   geom_errorbar(aes(ymin = plot.n.lci, ymax = plot.n.uci),
-#                 width = 0.5, linewidth= 1) +
-#   geom_text(data = n_compact, aes(x = trt, y = 30, label = .group),
-#             size = 6, fontface = "bold") +
-#   scale_y_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-#   scale_x_discrete(labels = c("S", "C", 
-#                               expression("NO"["3"]),
-#                               "AS")) +
-#   labs(x = "Treatment",
-#        y = expression(bold("Soil N ("*mu*"g N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
-#   theme_bw(base_size = 18) +
-#   theme(axis.title = element_text(face = "bold"),
-#         legend.title = element_text(face = "bold"),
-#         legend.text = element_text(hjust = 0),
-#         panel.grid.minor.y = element_blank())
-# 
-# pH_plot <- ggplot(data = pH_compact, aes(x = trt, y = emmean)) +
-#   geom_point(size = 5) +
-#   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
-#                 width = 0.5, linewidth = 1) +
-#   geom_text(aes(x = trt, y = 5.5, label = .group),
-#             size = 6, fontface = "bold") +
-#   scale_y_continuous(limits = c(3.5, 5.5), breaks = seq(3.5, 5.5, 0.5)) +
-#   scale_x_discrete(labels = c("S", "C", 
-#                               expression("NO"["3"]),
-#                               "AS")) +
-#   labs(x = "Treatment",
-#        y = "Soil pH") +
-#   theme_bw(base_size = 18) +
-#   theme(axis.title = element_text(face = "bold"),
-#         legend.title = element_text(face = "bold"),
-#         legend.text = element_text(hjust = 0),
-#         panel.grid.minor.y = element_blank())
-# 
-# no3_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.no3.mean)) +
-#   geom_point(size = 5) +
-#   geom_errorbar(aes(ymin = plot.no3.lci, ymax = plot.no3.uci),
-#                 width = 0.5, linewidth= 1) +
-#   geom_text(data = no3n_compact, aes(x = trt, y = 30, label = .group),
-#             size = 6, fontface = "bold") +
-#   scale_y_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-#   scale_x_discrete(labels = c("S", "C", 
-#                               expression("NO"["3"]),
-#                               "AS")) +
-#   labs(x = "Treatment",
-#        y = expression(bold("Soil NO"["3"]*"-N ("*mu*"g NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
-#   theme_bw(base_size = 18) +
-#   theme(axis.title = element_text(face = "bold"),
-#         legend.title = element_text(face = "bold"),
-#         legend.text = element_text(hjust = 0),
-#         panel.grid.minor.y = element_blank())
-# 
-# nh4_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.nh4.mean)) +
-#   geom_point(size = 5) +
-#   geom_errorbar(aes(ymin = plot.nh4.lci, ymax = plot.nh4.uci),
-#                 width = 0.5, linewidth= 1) +
-#   geom_text(data = nh4_compact, aes(x = trt, y = 10, label = .group),
-#             size = 6, fontface = "bold") +
-#   scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2.5)) +
-#   scale_x_discrete(labels = c("S", "C", 
-#                               expression("NO"["3"]),
-#                               "AS")) +
-#   labs(x = "Treatment",
-#        y = expression(bold("Soil NH"["4"]*"-N ("*mu*"g NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
-#   theme_bw(base_size = 18) +
-#   theme(axis.title = element_text(face = "bold"),
-#         legend.title = element_text(face = "bold"),
-#         legend.text = element_text(hjust = 0),
-#         panel.grid.minor.y = element_blank())
-# 
-# 
-# png(filename = "../../nitrogen_pH/working_drafts/figs/NxS_figS2_treatment_soil.png",
-#     height = 10, width = 12, units = "in", res = 600)
-# ggpubr::ggarrange(n_plot, pH_plot, no3_plot, nh4_plot,
-#                   ncol = 2, nrow = 2, align = "hv")
-# dev.off()
+n_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.n.mean)) +
+  geom_point(size = 5) +
+  geom_errorbar(aes(ymin = plot.n.lci, ymax = plot.n.uci),
+                width = 0.5, linewidth= 1) +
+  geom_text(data = n_compact, aes(x = trt, y = 30, label = .group),
+            size = 6, fontface = "bold") +
+  scale_y_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_x_discrete(labels = c("S", "C",
+                              expression("NO"["3"]),
+                              "AS")) +
+  labs(x = "Treatment",
+       y = expression(bold("Soil N ("*mu*"g N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+  theme_bw(base_size = 18) +
+  theme(axis.title = element_text(face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(hjust = 0),
+        panel.grid.minor.y = element_blank())
 
+pH_plot <- ggplot(data = pH_compact, aes(x = trt, y = emmean)) +
+  geom_point(size = 5) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
+                width = 0.5, linewidth = 1) +
+  geom_text(aes(x = trt, y = 5.5, label = .group),
+            size = 6, fontface = "bold") +
+  scale_y_continuous(limits = c(3.5, 5.5), breaks = seq(3.5, 5.5, 0.5)) +
+  scale_x_discrete(labels = c("S", "C",
+                              expression("NO"["3"]),
+                              "AS")) +
+  labs(x = "Treatment",
+       y = "Soil pH") +
+  theme_bw(base_size = 18) +
+  theme(axis.title = element_text(face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(hjust = 0),
+        panel.grid.minor.y = element_blank())
+
+no3_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.no3.mean)) +
+  geom_point(size = 5) +
+  geom_errorbar(aes(ymin = plot.no3.lci, ymax = plot.no3.uci),
+                width = 0.5, linewidth= 1) +
+  geom_text(data = no3n_compact, aes(x = trt, y = 30, label = .group),
+            size = 6, fontface = "bold") +
+  scale_y_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_x_discrete(labels = c("S", "C",
+                              expression("NO"["3"]),
+                              "AS")) +
+  labs(x = "Treatment",
+       y = expression(bold("Soil NO"["3"]*"-N ("*mu*"g NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+  theme_bw(base_size = 18) +
+  theme(axis.title = element_text(face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(hjust = 0),
+        panel.grid.minor.y = element_blank())
+
+nh4_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.nh4.mean)) +
+  geom_point(size = 5) +
+  geom_errorbar(aes(ymin = plot.nh4.lci, ymax = plot.nh4.uci),
+                width = 0.5, linewidth= 1) +
+  geom_text(data = nh4_compact, aes(x = trt, y = 10, label = .group),
+            size = 6, fontface = "bold") +
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2.5)) +
+  scale_x_discrete(labels = c("S", "C",
+                              expression("NO"["3"]),
+                              "AS")) +
+  labs(x = "Treatment",
+       y = expression(bold("Soil NH"["4"]*"-N ("*mu*"g NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+  theme_bw(base_size = 18) +
+  theme(axis.title = element_text(face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(hjust = 0),
+        panel.grid.minor.y = element_blank())
+
+
+# png(filename = [insert path here],
+#     height = 10, width = 12, units = "in", res = 600)
+ggpubr::ggarrange(n_plot, pH_plot, no3_plot, nh4_plot,
+                  ncol = 2, nrow = 2, align = "hv",
+                  labels = c("(a)", "(b)", "(c)", "(d)"),
+                  font.label = list(size = 18, face = "bold"))
+# dev.off()
 
 ##########################################################################
 ##########################################################################
@@ -1012,6 +1013,8 @@ test(emtrends(chi,  ~1, var = "soil.nh4n.norm"))
 ##########################################################################
 ## PNUE - soil ammonium
 ##########################################################################
+data$pnue[data$pnue < 0] <- NA
+
 pnue <- lmer(sqrt(pnue) ~ soil.nh4n.norm + mineral.pH + (1 | site),
              data = subset(data, nrcs.code == "ACSA3"))
 
@@ -1058,7 +1061,7 @@ test(emtrends(narea.chi, ~1, var = "mineral.pH"))
 ##########################################################################
 ## Vcmax25.chi - soil ammonium
 ##########################################################################
-vcmax.chi <- lmer(vcmax.chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
+vcmax.chi <- lmer(log(vcmax.chi) ~ soil.nh4n.norm + mineral.pH + (1 | site),
                   data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
@@ -1548,13 +1551,3 @@ r.squaredGLMM(vcmax.chi.nleaf)
 
 # Test Narea-Anet slope
 test(emtrends(vcmax.chi.nleaf, ~1, "narea"))
-
-
-
-
-
-
-
-
-
-
