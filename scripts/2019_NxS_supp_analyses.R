@@ -9,19 +9,30 @@ library(tidyverse)
 library(MuMIn)
 library(multcomp)
 library(multcompView)
+library(ggpubr)
 
 emm_options(opt.digits = FALSE)
 
 # Import datasheet
 data <- read.csv("../data/2019_NxS_datasheet.csv", stringsAsFactors = FALSE,
                  na.strings = "NA") %>%
-  mutate(anet.mass = a400 / marea,
-         vcmax.mass = vcmax25 / marea,
-         jmax.mass = jmax25 / marea,
-         n.trt = ifelse(treatment == "AS" | treatment == "NO3", "n.added",
-                        "no.n"),
-         s.trt = ifelse(treatment == "AS" | treatment == "S", "s.added",
-                        "no.s"))
+  mutate(treatment = factor(treatment, levels = c("C", "NO3", "AS", "S")))
+
+## Central figure theme
+pubtheme <- theme_bw(base_size = 16) +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        axis.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold"),
+        panel.border = element_rect(size = 1.5, fill = NA),
+        legend.box.background = element_blank(),
+        legend.key = element_blank(),
+        legend.background = element_blank(),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(size = 16),
+        axis.ticks.length = unit(0.25, "cm"),
+        panel.grid.minor.y = element_blank(),
+        legend.text.align = 0)
 
 ##########################################################################
 ## Import and clean soil dataset
@@ -50,8 +61,6 @@ soils.data.total <- read.csv("../data/2019_NxS_resinbag_datasheet_rep.csv") %>%
 ##########################################################################
 # Leaf temp. effect on Anet - linear regression
 ##########################################################################
-data$a400[data$a400 < 0.2] <- NA
-
 a400 <- lmer(sqrt(a400) ~ leaf.temp + (1 | site), 
              data = subset(data, nrcs.code == "ACSA3"))
 
@@ -103,6 +112,91 @@ gs400.nls <- nls(formula = log(gsw) ~ a + b*leaf.temp + c*(leaf.temp^2),
                  start = list(a = -0.17, b = -0.18, c = 0.0027),
                  data = data)
 coef(gs400.nls)
+
+
+##########################################################################
+# Plot for Anet, gsw (Fig. S1)
+##########################################################################
+# Trendline prep
+a400.linear.pred <- data.frame(emmeans(a400, ~1, "leaf.temp",
+                                       at = list(leaf.temp = seq(21.7, 31.8, 0.1)),
+                                       type = "response"))
+a400.nls.pred <- data.frame(emmeans(a400.nls, ~1, "leaf.temp", 
+                                    at = list(leaf.temp = seq(21.7, 31.8, 0.1)),
+                                    type = "response"))
+
+# Anet plot
+a400_plot <- ggplot(data = subset(data, nrcs.code == "ACSA3"),
+                 aes(x = leaf.temp, y = a400)) +
+  geom_point(aes(shape = treatment, fill = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_smooth(data = a400.linear.pred, 
+              aes(x = leaf.temp, y = response),
+              lty = 2, size = 2, color = "black") +
+  geom_smooth(data = a400.nls.pred, 
+            aes(x = leaf.temp, y = response),
+            lty = 2, size = 2, color = "blue") +
+  scale_x_continuous(limits = c(21, 33), breaks = seq(21, 33, 3)) +
+  scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2.5)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00", "#E69F00", "#009E73"),
+                    labels = c("C" = "no N; no S",
+                               "NO3" = "+ N; no S",
+                               "AS" = "+ N; + S",
+                               "S" = "no N; + S")) +
+  labs(x = expression(bold("Leaf temperature ("*degree*"C)")),
+       y = expression(bold("A"["net"]~ "(μmol m"^"-2"~"s"^"-1"~")")),
+       fill = "Treatment", shape = "Treatment") +
+  pubtheme
+a400_plot
+
+# Gs plot
+gs400.linear.pred <- data.frame(emmeans(gs400, ~1, "leaf.temp",
+                                        at = list(leaf.temp = seq(21.7, 31.8, 0.1)),
+                                        type = "response"))
+gs400.nls.pred <- data.frame(emmeans(gs400.nls, ~1, "leaf.temp", 
+                                     at = list(leaf.temp = seq(21.7, 31.8, 0.1)),
+                                     type = "response"))
+gsw_plot <- ggplot(data = subset(data, nrcs.code == "ACSA3"),
+                 aes(x = leaf.temp, y = gsw)) +
+  geom_point(aes(shape = treatment, fill = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_smooth(data = gs400.linear.pred, 
+              aes(x = leaf.temp, y = response),
+              lty = 2, size = 2, color = "black") +
+  geom_smooth(data = gs400.nls.pred, 
+              aes(x = leaf.temp, y = response),
+              lty = 2, size = 2, color = "blue") +
+  scale_x_continuous(limits = c(21, 33), breaks = seq(21, 33, 3)) +
+  scale_y_continuous(limits = c(0, 0.1), breaks = seq(0, 0.1, 0.025)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00", "#E69F00", "#009E73"),
+                    labels = c("C" = "no N; no S",
+                               "NO3" = "+ N; no S",
+                               "AS" = "+ N; + S",
+                               "S" = "no N; + S")) +
+  labs(x = expression(bold("Leaf temperature ("*degree*"C)")),
+       y = expression(bold("g"["s"]~ "(mol m"^"-2"~"s"^"-1"~")")),
+       fill = "Treatment", shape = "Treatment") +
+  pubtheme
+gsw_plot
+
+png("../../nitrogen_pH/working_drafts/figs/NxS_figS1_leaftemp.png",
+    width = 10, height = 3.5, units = "in", res = 600)
+ggarrange(a400_plot, gsw_plot, ncol = 2, nrow = 1,
+          common.legend = TRUE, legend = "right",
+          labels = c("(a)", "(b)", "(c)"),
+          font.label = list(size = 18, face = "bold"))
+dev.off()
+
 
 ##########################################################################
 ## Soil N variance across plots (Table S4; Fig S2)
@@ -267,54 +361,86 @@ nh4_compact <- cld(emmeans(nh4n, pairwise~n.trt*s.trt),
 ##########################################################################
 ## Figure S2
 ##########################################################################
-n_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.n.mean)) +
-  geom_point(size = 5) +
+n_plot <- ggplot(data = soiln_trt, 
+                 aes(x = trt, y = plot.n.mean)) +
   geom_errorbar(aes(ymin = plot.n.lci, ymax = plot.n.uci),
                 width = 0.5, linewidth= 1) +
-  geom_text(data = n_compact, aes(x = trt, y = 30, label = .group),
+  geom_point(aes(shape = trt, fill = trt), 
+             size = 5) +
+  geom_text(data = n_compact, 
+            aes(x = trt, y = 30, label = .group),
             size = 6, fontface = "bold") +
   scale_y_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_x_discrete(labels = c("S", "C",
-                              expression("NO"["3"]),
-                              "AS")) +
+  scale_x_discrete(labels = c("S", "C", expression("NO"["3"]), "AS")) +
+  scale_shape_manual(values = c(24, 21, 22, 23),
+                     labels = c("no.n_no.s" = "no N; no S",
+                                "n.added_no.s" = "+ N; no S",
+                                "n.added_s.added" = "+ N; + S",
+                                "no.n_s.added" = "no N; + S")) +
+  scale_fill_manual(values = c("#009E73", "#0072B2", "#D55E00", "#E69F00"),
+                    labels = c("no.n_no.s" = "no N; no S",
+                               "n.added_no.s" = "+ N; no S",
+                               "n.added_s.added" = "+ N; + S",
+                               "no.n_s.added" = "no N; + S")) +
   labs(x = "Treatment",
        y = expression(bold("Soil N ("*mu*"g N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+  guides(fill = "none", shape = "none") +
   theme_bw(base_size = 18) +
   theme(axis.title = element_text(face = "bold"),
         legend.title = element_text(face = "bold"),
         legend.text = element_text(hjust = 0),
         panel.grid.minor.y = element_blank())
 
-pH_plot <- ggplot(data = pH_compact, aes(x = trt, y = emmean)) +
-  geom_point(size = 5) +
+pH_plot <- ggplot(data = pH_compact, 
+                  aes(x = trt, y = emmean)) +
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL),
                 width = 0.5, linewidth = 1) +
+  geom_point(aes(fill = trt, shape = trt), size = 5) +
   geom_text(aes(x = trt, y = 5.5, label = .group),
             size = 6, fontface = "bold") +
   scale_y_continuous(limits = c(3.5, 5.5), breaks = seq(3.5, 5.5, 0.5)) +
-  scale_x_discrete(labels = c("S", "C",
-                              expression("NO"["3"]),
-                              "AS")) +
-  labs(x = "Treatment",
-       y = "Soil pH") +
+  scale_x_discrete(labels = c("S", "C", expression("NO"["3"]), "AS")) +
+  scale_shape_manual(values = c(24, 21, 22, 23),
+                     labels = c("no.n_no.s" = "no N; no S",
+                                "n.added_no.s" = "+ N; no S",
+                                "n.added_s.added" = "+ N; + S",
+                                "no.n_s.added" = "no N; + S")) +
+  scale_fill_manual(values = c("#009E73", "#0072B2", "#D55E00", "#E69F00"),
+                    labels = c("no.n_no.s" = "no N; no S",
+                               "n.added_no.s" = "+ N; no S",
+                               "n.added_s.added" = "+ N; + S",
+                               "no.n_s.added" = "no N; + S")) +
+  labs(x = "Treatment", y = "Soil pH") +
+  guides(fill = "none", shape = "none") +
   theme_bw(base_size = 18) +
   theme(axis.title = element_text(face = "bold"),
         legend.title = element_text(face = "bold"),
         legend.text = element_text(hjust = 0),
         panel.grid.minor.y = element_blank())
 
-no3_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.no3.mean)) +
-  geom_point(size = 5) +
+no3_plot <- ggplot(data = soiln_trt, 
+                   aes(x = trt, y = plot.no3.mean)) +
   geom_errorbar(aes(ymin = plot.no3.lci, ymax = plot.no3.uci),
-                width = 0.5, linewidth= 1) +
-  geom_text(data = no3n_compact, aes(x = trt, y = 30, label = .group),
+                width = 0.5, linewidth = 1) +
+  geom_point(aes(fill = trt, shape = trt), size = 5) +
+  geom_text(data = no3n_compact, 
+            aes(x = trt, y = 30, label = .group),
             size = 6, fontface = "bold") +
   scale_y_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
-  scale_x_discrete(labels = c("S", "C",
-                              expression("NO"["3"]),
-                              "AS")) +
+  scale_x_discrete(labels = c("S", "C", expression("NO"["3"]), "AS")) +
+  scale_shape_manual(values = c(24, 21, 22, 23),
+                     labels = c("no.n_no.s" = "no N; no S",
+                                "n.added_no.s" = "+ N; no S",
+                                "n.added_s.added" = "+ N; + S",
+                                "no.n_s.added" = "no N; + S")) +
+  scale_fill_manual(values = c("#009E73", "#0072B2", "#D55E00", "#E69F00"),
+                    labels = c("no.n_no.s" = "no N; no S",
+                               "n.added_no.s" = "+ N; no S",
+                               "n.added_s.added" = "+ N; + S",
+                               "no.n_s.added" = "no N; + S")) +
   labs(x = "Treatment",
        y = expression(bold("Soil NO"["3"]*"-N ("*mu*"g NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+  guides(fill = "none", shape = "none") +
   theme_bw(base_size = 18) +
   theme(axis.title = element_text(face = "bold"),
         legend.title = element_text(face = "bold"),
@@ -322,17 +448,27 @@ no3_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.no3.mean)) +
         panel.grid.minor.y = element_blank())
 
 nh4_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.nh4.mean)) +
-  geom_point(size = 5) +
   geom_errorbar(aes(ymin = plot.nh4.lci, ymax = plot.nh4.uci),
-                width = 0.5, linewidth= 1) +
-  geom_text(data = nh4_compact, aes(x = trt, y = 10, label = .group),
+                width = 0.5, linewidth = 1) +
+  geom_point(aes(fill = trt, shape = trt), size = 5) +
+  geom_text(data = nh4_compact, 
+            aes(x = trt, y = 10, label = .group),
             size = 6, fontface = "bold") +
   scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2.5)) +
-  scale_x_discrete(labels = c("S", "C",
-                              expression("NO"["3"]),
-                              "AS")) +
+  scale_x_discrete(labels = c("S", "C", expression("NO"["3"]), "AS")) +
+  scale_shape_manual(values = c(24, 21, 22, 23),
+                     labels = c("no.n_no.s" = "no N; no S",
+                                "n.added_no.s" = "+ N; no S",
+                                "n.added_s.added" = "+ N; + S",
+                                "no.n_s.added" = "no N; + S")) +
+  scale_fill_manual(values = c("#009E73", "#0072B2", "#D55E00", "#E69F00"),
+                    labels = c("no.n_no.s" = "no N; no S",
+                               "n.added_no.s" = "+ N; no S",
+                               "n.added_s.added" = "+ N; + S",
+                               "no.n_s.added" = "no N; + S")) +
   labs(x = "Treatment",
        y = expression(bold("Soil NH"["4"]*"-N ("*mu*"g NH"["4"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")"))) +
+  guides(fill = "none", shape = "none") +
   theme_bw(base_size = 18) +
   theme(axis.title = element_text(face = "bold"),
         legend.title = element_text(face = "bold"),
@@ -340,13 +476,13 @@ nh4_plot <- ggplot(data = soiln_trt, aes(x = trt, y = plot.nh4.mean)) +
         panel.grid.minor.y = element_blank())
 
 
-# png(filename = [insert path here],
-#     height = 10, width = 12, units = "in", res = 600)
+png(filename = "../../nitrogen_pH/working_drafts/figs/NxS_figS2_treatment_soil.png",
+    height = 10, width = 12, units = "in", res = 600)
 ggpubr::ggarrange(n_plot, pH_plot, no3_plot, nh4_plot,
                   ncol = 2, nrow = 2, align = "hv",
                   labels = c("(a)", "(b)", "(c)", "(d)"),
                   font.label = list(size = 18, face = "bold"))
-# dev.off()
+dev.off()
 
 ##########################################################################
 ##########################################################################

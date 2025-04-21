@@ -28,11 +28,7 @@ pubtheme <- theme_bw(base_size = 16) +
 ## Load data and marginal mean + SE summary sheet
 data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
-                 na.strings = "NA") %>%
-  mutate(anet.mass = a400 / marea,
-         vcmax.mass = vcmax25 / marea,
-         jmax.mass = jmax25 / marea,
-         treatment = factor(treatment, levels = c("C", "NO3", "AS", "S")))
+                 na.strings = "NA")
 
 plot_data <- subset(data, nrcs.code == "ACSA3") %>%
   mutate(treatment = factor(treatment, levels = c("C", "NO3", "AS", "S")))
@@ -42,7 +38,6 @@ data$a400[data$a400 < 0.2] <- NA
 data$anet.mass[data$a400 < 0.2] <- NA
 data$pnue[data$pnue < 0] <- NA
 data$vcmax.chi[c(85)] <- NA
-
 
 ##########################################################################
 ## Nmass - soil N
@@ -437,7 +432,7 @@ jmax.plot <- ggplot(data = plot_data, aes(x = soil.n.norm, y = jmax25)) +
              size = 4, alpha = 0.75) +
   geom_ribbon(data = jmax.trend, 
               aes(y = emmean, ymin = lower.CL, ymax = upper.CL),
-              alpha = 0.3) +
+              alpha = 0.2) +
   geom_smooth(data = jmax.trend, aes(y = emmean), size = 2, se = FALSE,
               color = "black", method = 'lm') +
   scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
@@ -538,7 +533,7 @@ Anova(chi)
 chi.trend <- data.frame(emmeans(chi, ~1, "soil.n.norm", 
                                  at = list(soil.n.norm = seq(0, 30, 0.1))))
 
-chi <- ggplot(data = plot_data, aes(x = soil.n.norm, y = chi)) +
+chi_plot <- ggplot(data = plot_data, aes(x = soil.n.norm, y = chi)) +
   geom_point(aes(shape = treatment, fill = treatment), 
              size = 4, alpha = 0.75) +
   geom_ribbon(data = chi.trend, 
@@ -563,7 +558,7 @@ chi <- ggplot(data = plot_data, aes(x = soil.n.norm, y = chi)) +
        shape = "Treatment",
        fill = "Treatment") +
   pubtheme
-chi
+chi_plot
 
 ##########################################################################
 ## chi - soil pH
@@ -643,7 +638,7 @@ pnue.plot <- ggplot(data = plot_data, aes(x = soil.n.norm, y = pnue)) +
   geom_point(aes(shape = treatment, fill = treatment), size = 4, alpha = 0.75) +
   geom_ribbon(data = pnue.trend, 
               aes(y = response, ymin = lower.CL, ymax = upper.CL), 
-              alpha = 0.3) +
+              alpha = 0.2) +
   geom_smooth(data = pnue.trend, aes(y = response), size = 2, se = FALSE,
               color = "black", linetype = "dashed") +
   scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
@@ -775,7 +770,7 @@ vcmax.chi.plot <- ggplot(data = plot_data, aes(x = soil.n.norm, y = vcmax.chi)) 
              size = 4, alpha = 0.75) +
   geom_ribbon(data = vcmax.chi.trend, 
               aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
-              alpha = 0.32) +
+              alpha = 0.2) +
   geom_smooth(data = vcmax.chi.trend, aes(y = emmean), size = 2, se = FALSE,
               color = "black") +
   scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
@@ -823,45 +818,6 @@ vcmax.chi.ph.plot <- ggplot(data = plot_data,
 vcmax.chi.ph.plot
 
 ##########################################################################
-## pnue.chi - chi
-##########################################################################
-
-pnue.chi <- lmer(pnue ~ chi + (1 | site), 
-                 data = subset(data, nrcs.code == "ACSA3"))
-Anova(pnue.chi)
-
-pnue.chi.trend <- data.frame(emmeans(pnue.chi, ~1, "chi",
-                                      at = list(chi = seq(0.6, 0.9, 0.01)),
-                                      type = "response"))
-
-pnue.chi.plot <- ggplot(data = plot_data, aes(x = chi, y = pnue)) +
-  geom_point(data = plot_data, aes(shape = treatment, fill = treatment), 
-             size = 4, alpha = 0.75) +
-  geom_ribbon(data = pnue.chi.trend, 
-              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
-              alpha = 0.3) +
-  geom_smooth(data = pnue.chi.trend, aes(y = emmean), size = 2, se = FALSE,
-              color = "black") +
-  scale_x_continuous(limits = c(0.57, 0.9), breaks = seq(0.6, 0.9, 0.1)) +
-  scale_y_continuous(limits = c(-10, 100), breaks = seq(0, 100, 25)) +
-  scale_shape_manual(values = c(21, 22, 23, 24),
-                     labels = c("C" = "no N; no S",
-                                "NO3" = "+ N; no S",
-                                "AS" = "+ N; + S",
-                                "S" = "no N; + S")) +
-  scale_fill_manual(values = c("#0072B2", "#D55E00", "#E69F00", "#009E73"),
-                    labels = c("C" = "no N; no S",
-                               "NO3" = "+ N; no S",
-                               "AS" = "+ N; + S",
-                               "S" = "no N; + S")) +
-  labs(x = expression(bold(chi*" (unitless)")),
-       y = expression(bold("PNUE (μmol CO"["2"]*" mol"^"-1"*"N s"^"-1"*")")),
-       shape = "Treatment",
-       fill = "Treatment") +
-  pubtheme
-pnue.chi.plot
-
-##########################################################################
 ## Vcmax-chi - leaf N
 ##########################################################################
 vcmax.chi.nleaf <- lmer(vcmax.chi ~ narea + (1 | site), 
@@ -876,7 +832,7 @@ vcmax.chi.narea <- ggplot(data = plot_data, aes(x = narea, y = vcmax.chi)) +
              size = 4, alpha = 0.75) +
   geom_ribbon(data = vcmax.chi.nleaf.trend, 
               aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
-              alpha = 0.3) +
+              alpha = 0.2) +
   geom_smooth(data = vcmax.chi.nleaf.trend, aes(y = emmean), size = 2, se = FALSE,
               color = "black") +
   scale_x_continuous(limits = c(0.5, 2.5), breaks = seq(0.5, 2.5, 0.5)) +
@@ -899,10 +855,121 @@ vcmax.chi.narea <- ggplot(data = plot_data, aes(x = narea, y = vcmax.chi)) +
 vcmax.chi.narea
 
 ##########################################################################
+## pnue - chi
+##########################################################################
+pnue.chi <- lmer(pnue.chi ~ soil.n.norm + mineral.pH + (1 | site),
+                 data = subset(data, nrcs.code == "ACSA3"))
+Anova(pnue.chi)
+
+pnue.chi.trend <- data.frame(emmeans(pnue.chi, ~1, "soil.n.norm",
+                                     at = list(soil.n.norm = seq(0, 30,0.1)),
+                                     type = "response"))
+
+pnue.chi.plot <- ggplot(data = plot_data, aes(x = soil.n.norm, y = pnue.chi)) +
+  geom_point(aes(shape = treatment, fill = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = pnue.chi.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
+              alpha = 0.2) +
+  geom_smooth(data = pnue.chi.trend, aes(y = emmean), size = 2, se = FALSE,
+              color = "black", linetype = "dashed") +
+  scale_x_continuous(limits = c(0, 30), breaks = seq(0, 30, 10)) +
+  scale_y_continuous(limits = c(-17, 140), breaks = seq(0, 140, 35)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00", "#E69F00", "#009E73"),
+                    labels = c("C" = "no N; no S",
+                               "NO3" = "+ N; no S",
+                               "AS" = "+ N; + S",
+                               "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil N (μg N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("PNUE:"*chi*" (μmol CO"["2"]*" mol"^"-1"*"N s"^"-1"*")")),
+       shape = "Treatment",
+       fill = "Treatment") +
+  pubtheme +
+  theme(axis.title.y = element_text(size = 13))
+pnue.chi.plot
+
+
+##########################################################################
+## pnue - chi
+##########################################################################
+##########################################################################
+## PNUE.chi - soil pH
+##########################################################################
+pnue.chi.ph.plot <- ggplot(data = plot_data,
+                            aes(x = mineral.pH, y = pnue.chi)) +
+  geom_point(data = plot_data, aes(shape = treatment, fill = treatment), 
+             size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(3.5, 5.5), breaks = seq(3.5, 5.5, 0.5)) +
+  scale_y_continuous(limits = c(-17, 140), breaks = seq(0, 140, 35)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00", "#E69F00", "#009E73"),
+                    labels = c("C" = "no N; no S",
+                               "NO3" = "+ N; no S",
+                               "AS" = "+ N; + S",
+                               "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil pH")),
+       y = expression(bold("PNUE:"*chi*" (μmol CO"["2"]*" mol"^"-1"*"N s"^"-1"*")")),
+       shape = "Treatment",
+       fill = "Treatment") +
+  pubtheme +
+  theme(axis.title.y = element_text(size = 13))
+pnue.chi.ph.plot
+
+##########################################################################
+## pnue - chi bivariate
+##########################################################################
+pnue.chi.bivariate <- lmer(pnue ~ chi + (1 | site),
+                           data = subset(data, nrcs.code == "ACSA3"))
+Anova(pnue.chi.bivariate)
+
+pnue.chi.bivariate.trend <- data.frame(emmeans(pnue.chi.bivariate, ~1, "chi",
+                                               at = list(chi = seq(0.6, 0.9, 0.01)),
+                                               type = "response"))
+
+pnue.chi.bivariate.plot <- ggplot(data = plot_data, 
+                                  aes(x = chi, y = pnue)) +
+  geom_point(data = plot_data, aes(shape = treatment, fill = treatment), 
+             size = 4, alpha = 0.75) +
+  geom_ribbon(data = pnue.chi.bivariate.trend, 
+              aes(y = emmean, ymin = lower.CL, ymax = upper.CL), 
+              alpha = 0.2) +
+  geom_smooth(data = pnue.chi.bivariate.trend, 
+              aes(y = emmean), size = 2, se = FALSE,
+              color = "black") +
+  scale_x_continuous(limits = c(0.57, 0.9), breaks = seq(0.6, 0.9, 0.1)) +
+  scale_y_continuous(limits = c(-10, 100), breaks = seq(0, 100, 25)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00", "#E69F00", "#009E73"),
+                    labels = c("C" = "no N; no S",
+                               "NO3" = "+ N; no S",
+                               "AS" = "+ N; + S",
+                               "S" = "no N; + S")) +
+  labs(x = expression(bold(chi*" (unitless)")),
+       y = expression(bold("PNUE (μmol CO"["2"]*" mol"^"-1"*"N s"^"-1"*")")),
+       shape = "Treatment",
+       fill = "Treatment") +
+  pubtheme +
+  theme(axis.title.y = element_text(size = 13))
+pnue.chi.bivariate.plot
+
+##########################################################################
 ## Figure 1: leaf N
 ##########################################################################
-# png("[insert path here]",
-#     width = 10, height = 12, units = 'in', res = 600)
+png("../../nitrogen_pH/working_drafts/figs/NxS_fig1_leafn.png",
+    width = 11, height = 12, units = 'in', res = 600)
 ggarrange(narea.plot, narea.ph.plot,
           nmass.plot, nmass.ph.plot,
           marea.plot, marea.ph.plot,
@@ -910,13 +977,13 @@ ggarrange(narea.plot, narea.ph.plot,
           common.legend = TRUE, legend = "right", 
           labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)"),
           font.label = list(size = 18, face = "bold"))
-# dev.off()
+dev.off()
 
 ##########################################################################
 ## Figure 2: Leaf biochemistry
 ##########################################################################
-# png("[insert path here]",
-#     width = 13, height = 11, units = 'in', res = 600)
+png("../../nitrogen_pH/working_drafts/figs/NxS_fig2_leafbiochem.png",
+    width = 13, height = 11, units = 'in', res = 600)
 ggarrange(a400.plot, a400.ph.plot, a400.narea,
           vcmax.plot, vcmax.ph.plot, vcmax.narea,
           jmax.plot, jmax.ph.plot, jmax.narea,
@@ -925,14 +992,14 @@ ggarrange(a400.plot, a400.ph.plot, a400.narea,
           labels = c("(a)", "(b)", "(c)", "(d)", "(e)",
                      "(f)", "(g)", "(h)", "(i)"),
           font.label = list(size = 18, face = "bold"))
-# dev.off()
+dev.off()
 
 ##########################################################################
 ## Figure 3: PNUE/iWUE 
 ##########################################################################
-# png("[insert path here]",
-#     width = 10, height = 15, units = 'in', res = 600)
-ggarrange(chi, chi.ph.plot,
+png("../../nitrogen_pH/working_drafts/figs/NxS_fig3_pnueiwue.png",
+    width = 10, height = 15, units = 'in', res = 600)
+ggarrange(chi_plot, chi.ph.plot,
           pnue.plot, pnue.ph.plot, 
           narea.chi.plot, narea.chi.ph.plot,
           vcmax.chi.plot, vcmax.chi.ph.plot,
@@ -941,16 +1008,16 @@ ggarrange(chi, chi.ph.plot,
           labels = c("(a)", "(b)", "(c)", "(d)", 
                      "(e)", "(f)", "(g)", "(h)"),
           font.label = list(size = 18, face = "bold"))
-# dev.off()
+dev.off()
 
 ##########################################################################
 ## Figure 4: Relationships between Narea and chi/vcmax:chi
 ##########################################################################
-# png("[insert path here]",
-#     width = 6, height = 8, units = 'in', res = 600)
-ggarrange(chi.narea, vcmax.chi.narea,
-          ncol = 1, nrow = 2, align = "hv",
+png("../../nitrogen_pH/working_drafts/figs/NxS_fig4_nh2o_tradeoffs.png",
+    width = 6, height = 12, units = 'in', res = 600)
+ggarrange(chi.narea, vcmax.chi.narea, pnue.chi.plot,
+          ncol = 1, nrow = 3, align = "hv",
           common.legend = TRUE, legend = "right", 
-          labels = c("(a)", "(b)"),
+          labels = c("(a)", "(b)", "(c)"),
           font.label = list(size = 18, face = "bold"))
-# dev.off()
+dev.off()

@@ -12,18 +12,9 @@ library(MuMIn)
 emm_options(opt.digits = FALSE)
 
 # Import datasheet
-data <- read.csv("../data/2019_NxS_datasheet.csv", stringsAsFactors = FALSE,
-                 na.strings = "NA") %>%
-  mutate(iwue = a400 / gsw,
-         narea.gs = narea / gsw,
-         vcmax.gs = vcmax25 / gsw,
-         anet.mass = a400 / marea,
-         vcmax.mass = vcmax25 / marea,
-         jmax.mass = jmax25 / marea,
-         n.trt = ifelse(treatment == "AS" | treatment == "NO3", "n.added",
-                        "no.n"),
-         s.trt = ifelse(treatment == "AS" | treatment == "S", "s.added",
-                        "no.s"))
+data <- read.csv("../data/2019_NxS_datasheet.csv", 
+                 stringsAsFactors = FALSE,
+                 na.strings = "NA")
 
 ##########################################################################
 ## Nleaf - soil N
@@ -366,7 +357,7 @@ Anova(pnue)
 r.squaredGLMM(pnue)
 
 # Pairwise comparisons
-test(emtrends(pnue, ~1, var = "soil.n.norm"))
+test(emtrends(pnue, ~1, var = "soil.n.norm", regrid = "response"))
 
 ##########################################################################
 ## iWUE - soil N
@@ -437,4 +428,40 @@ r.squaredGLMM(vcmax.chi)
 
 # Post-hoc tests
 test(emtrends(vcmax.chi, ~1, var = "soil.n.norm"))
-    
+
+##########################################################################
+## pnue.chi - soil N
+##########################################################################
+pnue.chi <- lmer(pnue.chi ~ soil.n.norm + mineral.pH + (1 | site),
+                  data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(pnue.chi)
+qqnorm(residuals(pnue.chi))
+qqline(residuals(pnue.chi))
+hist(residuals(pnue.chi))
+shapiro.test(residuals(pnue.chi))
+outlierTest(pnue.chi)
+
+# Model output
+summary(pnue.chi)
+Anova(pnue.chi)
+r.squaredGLMM(pnue.chi)
+
+# Post-hoc tests
+test(emtrends(pnue.chi, ~1, var = "soil.n.norm"))
+
+##########################################################################
+## Correlation matrix of all measured traits
+##########################################################################
+cor_data <- subset(data, nrcs.code == "ACSA3") %>%
+  dplyr::select(nmass = leaf.n, marea, narea,
+                anet = a400, gs = gsw, vcmax25,
+                jmax25, jmax25_vcmax25 = jmax.vcmax,
+                pnue, chi, narea_chi = narea.chi, 
+                vcmax25_chi = vcmax.chi,
+                pnue_chi = pnue.chi)
+
+cor_results <- Hmisc::rcorr(as.matrix(cor_data))
+cor_results
+
