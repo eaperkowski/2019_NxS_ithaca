@@ -14,9 +14,12 @@ library(ggpubr)
 emm_options(opt.digits = FALSE)
 
 # Import datasheet
-data <- read.csv("../data/2019_NxS_datasheet.csv", stringsAsFactors = FALSE,
+data <- read.csv("../data/2019_NxS_datasheet.csv", 
+                 stringsAsFactors = FALSE,
                  na.strings = "NA") %>%
-  mutate(treatment = factor(treatment, levels = c("C", "NO3", "AS", "S")))
+  mutate(treatment = factor(treatment, levels = c("C", "NO3", "AS", "S")),
+         narea.gs = narea / gsw,
+         vcmax.gs = vcmax25 / gsw)
 
 ## Central figure theme
 pubtheme <- theme_bw(base_size = 16) +
@@ -63,8 +66,6 @@ soils.data.total <- read.csv("../data/2019_NxS_resinbag_datasheet_rep.csv") %>%
 ##########################################################################
 a400 <- lmer(sqrt(a400) ~ leaf.temp + (1 | site), 
              data = subset(data, nrcs.code == "ACSA3"))
-
-head(data)
 
 # Check model assumptions
 plot(a400)
@@ -1277,6 +1278,7 @@ emmeans(marea, pairwise~nrcs.code)
 ## Narea - soil N
 ##########################################################################
 data$narea[12] <- NA
+
 narea <- lmer(narea ~ soil.n.norm + mineral.pH + nrcs.code +
                 (1 | site), data = subset(data, nrcs.code == "ACRU" |
                                             nrcs.code == "ACSA3" |
@@ -1306,6 +1308,7 @@ emmeans(narea, pairwise~nrcs.code)
 ## Net photosynthesis - soil N
 ##########################################################################
 data$a400[data$a400 < 0.2] <- NA
+
 a400 <- lmer(sqrt(a400) ~ soil.n.norm + mineral.pH + nrcs.code + 
                (1 | site), data = subset(data, nrcs.code == "ACRU" |
                                            nrcs.code == "ACSA3" |
@@ -1357,6 +1360,62 @@ r.squaredGLMM(a400.nleaf)
 
 # Test Narea-Anet slope
 test(emtrends(a400.nleaf, ~1, "narea"))
+
+##########################################################################
+## Stomatal conductance - soil N
+##########################################################################
+data$a400[data$a400 < 0.2] <- NA
+
+gsw <- lmer(log(gsw) ~ soil.n.norm + mineral.pH + nrcs.code + 
+               (1 | site), data = subset(data, nrcs.code == "ACRU" |
+                                           nrcs.code == "ACSA3" |
+                                           nrcs.code == "QURU" |
+                                           nrcs.code == "FAGR" | 
+                                           nrcs.code == "FRAM2"))
+
+# Check model assumptions
+plot(gsw)
+qqnorm(residuals(gsw))
+qqline(residuals(gsw))
+hist(residuals(gsw))
+shapiro.test(residuals(gsw))
+outlierTest(gsw)
+
+# Model output
+summary(gsw)
+Anova(gsw)
+r.squaredGLMM(gsw)
+
+# Pairwise comparisons
+emmeans(gsw, pairwise~nrcs.code)
+
+##########################################################################
+## gsw-leaf N
+##########################################################################
+data$a400[data$a400 < 0.2] <- NA
+
+gsw.nleaf <- lmer(log(gsw) ~ narea + (1 | nrcs.code) + (1 | site), 
+                   data = subset(data, nrcs.code == "ACRU" |
+                                   nrcs.code == "ACSA3" |
+                                   nrcs.code == "QURU" |
+                                   nrcs.code == "FAGR" | 
+                                   nrcs.code == "FRAM2"))
+
+# Check model assumptions
+plot(gsw.nleaf)
+qqnorm(residuals(gsw.nleaf))
+qqline(residuals(gsw.nleaf))
+hist(residuals(gsw.nleaf))
+shapiro.test(residuals(gsw.nleaf))
+outlierTest(gsw.nleaf)
+
+# Model output
+summary(gsw.nleaf)
+Anova(gsw.nleaf)
+r.squaredGLMM(gsw.nleaf)
+
+# Test Narea-Anet slope
+test(emtrends(gsw.nleaf, ~1, "narea"))
 
 ##########################################################################
 ## Vcmax25 - soil N
@@ -1687,3 +1746,38 @@ r.squaredGLMM(vcmax.chi.nleaf)
 
 # Test Narea-Anet slope
 test(emtrends(vcmax.chi.nleaf, ~1, "narea"))
+
+##########################################################################
+## PNUE.chi - soil N
+##########################################################################
+data$vcmax.chi[c(11, 37)] <- NA
+
+pnue.chi <- lmer(sqrt(pnue.chi) ~ soil.n.norm + mineral.pH + nrcs.code +
+                    (1 | site), data = subset(data, nrcs.code == "ACRU" |
+                                                nrcs.code == "ACSA3" |
+                                                nrcs.code == "QURU" |
+                                                nrcs.code == "FAGR" |
+                                                nrcs.code == "FRAM2"))
+
+# Check normality assumptions
+plot(pnue.chi)
+qqnorm(residuals(pnue.chi))
+qqline(residuals(pnue.chi))
+hist(residuals(pnue.chi))
+shapiro.test(residuals(pnue.chi))
+outlierTest(pnue.chi)
+
+# Model output
+summary(pnue.chi)
+Anova(pnue.chi)
+r.squaredGLMM(pnue.chi)
+
+# Post-hoc tests
+test(emtrends(vcmax.chi, ~1, var = "soil.n.norm"))
+cld(emmeans(vcmax.chi, pairwise~nrcs.code))
+
+
+
+
+
+
