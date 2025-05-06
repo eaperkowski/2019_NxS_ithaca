@@ -19,7 +19,8 @@ data <- read.csv("../data/2019_NxS_datasheet.csv",
                  na.strings = "NA") %>%
   mutate(treatment = factor(treatment, levels = c("C", "NO3", "AS", "S")),
          narea.gs = narea / gsw,
-         vcmax.gs = vcmax25 / gsw)
+         vcmax.gs = vcmax25 / gsw,
+         pnue.gs = pnue / gsw)
 
 ## Central figure theme
 pubtheme <- theme_bw(base_size = 16) +
@@ -558,7 +559,7 @@ r.squaredGLMM(narea)
 test(emtrends(narea, ~1, var = "mineral.pH"))
 
 ##########################################################################
-## Anet,area - soil pH for only C and S plots
+## Anet - soil pH for only C and S plots
 ##########################################################################
 data$a400[data$a400 < 0.2] <- NA
 
@@ -578,6 +579,26 @@ outlierTest(a400)
 summary(a400)
 Anova(a400)
 r.squaredGLMM(a400)
+
+##########################################################################
+## gsw - soil pH for only C and S plots
+##########################################################################
+gsw_ph <- lmer(log(gsw) ~ mineral.pH +  (1 | site), 
+             data = subset(data, nrcs.code == "ACSA3" &
+                             (treatment == "C" | treatment == "S")))
+
+# Check model assumptions
+plot(gsw_ph)
+qqnorm(residuals(gsw_ph))
+qqline(residuals(gsw_ph))
+hist(residuals(gsw_ph))
+shapiro.test(residuals(gsw_ph))
+outlierTest(gsw_ph)
+
+# Model output
+summary(gsw_ph)
+Anova(gsw_ph)
+r.squaredGLMM(gsw_ph)
 
 ##########################################################################
 ## Vcmax25 - soil pH for only C and S plots
@@ -731,6 +752,26 @@ r.squaredGLMM(vcmax.chi)
 test(emtrends(vcmax.chi, ~1, var = "mineral.pH"))
 
 ##########################################################################
+## PNUE:chi - soil pH for only C and S plots
+##########################################################################
+pnuechi_ph <- lmer(log(pnue.chi) ~ mineral.pH +  (1 | site), 
+               data = subset(data, nrcs.code == "ACSA3" &
+                               (treatment == "C" | treatment == "S")))
+
+# Check model assumptions
+plot(pnuechi_ph)
+qqnorm(residuals(pnuechi_ph))
+qqline(residuals(pnuechi_ph))
+hist(residuals(pnuechi_ph))
+shapiro.test(residuals(pnuechi_ph))
+outlierTest(pnuechi_ph)
+
+# Model output
+summary(pnuechi_ph)
+Anova(pnuechi_ph)
+r.squaredGLMM(pnuechi_ph)
+
+##########################################################################
 ##########################################################################
 ## Effects of nitrate availability and soil pH on traits
 ##########################################################################
@@ -822,6 +863,8 @@ outlierTest(a400)
 summary(a400)
 Anova(a400)
 r.squaredGLMM(a400)
+
+
 
 ##########################################################################
 ## Vcmax25 - soil nitrate
@@ -952,6 +995,28 @@ r.squaredGLMM(narea.chi)
 test(emtrends(narea.chi, ~1, var = "soil.no3n.norm"))
 
 ##########################################################################
+## Narea:gs - soil nitrate
+##########################################################################
+narea.gs.no3n <- lmer(log(narea.gs) ~ soil.no3n.norm + mineral.pH + (1 | site),
+                  data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(narea.gs.no3n)
+qqnorm(residuals(narea.gs.no3n))
+qqline(residuals(narea.gs.no3n))
+hist(residuals(narea.gs.no3n))
+shapiro.test(residuals(narea.gs.no3n))
+outlierTest(narea.gs.no3n)
+
+# Model output
+summary(narea.gs.no3n)
+Anova(narea.gs.no3n)
+r.squaredGLMM(narea.gs.no3n)
+
+# Post-hoc tests
+test(emtrends(narea.gs.no3n, ~1, var = "soil.no3n.norm"))
+
+##########################################################################
 ## Vcmax25.chi - soil nitrate
 ##########################################################################
 data$vcmax.chi[85] <- NA
@@ -974,6 +1039,50 @@ r.squaredGLMM(vcmax.chi)
 
 # Post-hoc tests
 test(emtrends(vcmax.chi, ~1, var = "soil.no3n.norm"))
+
+##########################################################################
+## Vcmax:gs - soil nitrate
+##########################################################################
+vcmax.gs.no3n <- lmer(log(vcmax.gs) ~ soil.no3n.norm + mineral.pH + (1 | site),
+                      data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(vcmax.gs.no3n)
+qqnorm(residuals(vcmax.gs.no3n))
+qqline(residuals(vcmax.gs.no3n))
+hist(residuals(vcmax.gs.no3n))
+shapiro.test(residuals(vcmax.gs.no3n))
+outlierTest(vcmax.gs.no3n)
+
+# Model output
+summary(vcmax.gs.no3n)
+Anova(vcmax.gs.no3n)
+r.squaredGLMM(vcmax.gs.no3n)
+
+# Post-hoc tests
+test(emtrends(narea.gs.no3n, ~1, var = "soil.no3n.norm"))
+
+##########################################################################
+## PNUE:gs - soil nitrate
+##########################################################################
+pnue.gs.no3n <- lmer(pnue.gs ~ soil.no3n.norm + mineral.pH + (1 | site),
+                      data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(pnue.gs.no3n)
+qqnorm(residuals(pnue.gs.no3n))
+qqline(residuals(pnue.gs.no3n))
+hist(residuals(pnue.gs.no3n))
+shapiro.test(residuals(pnue.gs.no3n))
+outlierTest(pnue.gs.no3n)
+
+# Model output
+summary(pnue.gs.no3n)
+Anova(pnue.gs.no3n)
+r.squaredGLMM(pnue.gs.no3n)
+
+# Post-hoc tests
+test(emtrends(narea.gs.no3n, ~1, var = "soil.no3n.norm"))
 
 ##########################################################################
 ##########################################################################
@@ -1052,26 +1161,45 @@ test(emtrends(narea, ~1, var = "soil.nh4n.norm"))
 ##########################################################################
 data$a400[data$a400 < 0.2] <- NA
 
-a400 <- lmer(sqrt(a400) ~ soil.nh4n.norm + mineral.pH + (1 | site),
+a400_nh4n <- lmer(log(a400) ~ soil.nh4n.norm + mineral.pH + (1 | site),
              data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(a400)
-qqnorm(residuals(a400))
-qqline(residuals(a400))
-hist(residuals(a400))
-shapiro.test(residuals(a400))
-outlierTest(a400)
+plot(a400_nh4n)
+qqnorm(residuals(a400_nh4n))
+qqline(residuals(a400_nh4n))
+hist(residuals(a400_nh4n))
+shapiro.test(residuals(a400_nh4n))
+outlierTest(a400_nh4n)
 
 # Model output
-summary(a400)
-Anova(a400)
-r.squaredGLMM(a400)
+summary(a400_nh4n)
+Anova(a400_nh4n)
+r.squaredGLMM(a400_nh4n)
+
+##########################################################################
+## gsw - soil ammonium
+##########################################################################
+gsw_nh4n <- lmer(log(gsw) ~ soil.nh4n.norm + mineral.pH + (1 | site),
+             data = subset(data, nrcs.code == "ACSA3"))
+
+# Check model assumptions
+plot(gsw_nh4n)
+qqnorm(residuals(gsw_nh4n))
+qqline(residuals(gsw_nh4n))
+hist(residuals(gsw_nh4n))
+shapiro.test(residuals(gsw_nh4n))
+outlierTest(gsw_nh4n)
+
+# Model output
+summary(gsw_nh4n)
+Anova(gsw_nh4n)
+r.squaredGLMM(gsw_nh4n)
 
 ##########################################################################
 ## Vcmax25 - soil ammonium
 ##########################################################################
-vcmax <- lmer(vcmax25 ~ soil.nh4n.norm + mineral.pH + (1 | site), 
+vcmax <- lmer(log(vcmax25) ~ soil.nh4n.norm + mineral.pH + (1 | site), 
               data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
