@@ -13,9 +13,11 @@ library(ggpubr)
 emm_options(opt.digits = FALSE)
 
 # Import datasheet
-data <- read.csv("../data/2019_NxS_datasheet.csv", stringsAsFactors = FALSE,
+data <- read.csv("../data/2019_NxS_datasheet.csv", 
+                 stringsAsFactors = FALSE,
                  na.strings = "NA") %>%
-  mutate(treatment = factor(treatment, levels = c("C", "NO3", "AS", "S")))
+  mutate(treatment = factor(treatment, 
+                            levels = c("C", "NO3", "AS", "S")))
 head(data)
 
 # Subset dataset to only include Acer saccharum
@@ -46,28 +48,29 @@ pubtheme <- theme_bw(base_size = 16) +
 ##########################################################################
 ## Nleaf - soil NO3-N
 ##########################################################################
-leaf.n.no3n <- lmer(leaf.n ~ soil.no3n.norm + mineral.pH + (1 | site), 
+nmass_no3n <- lmer(leaf.n ~ soil.no3n.norm + mineral.pH + (1 | site), 
                data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(leaf.n.no3n)
-qqnorm(residuals(leaf.n.no3n))
-qqline(residuals(leaf.n.no3n))
-hist(residuals(leaf.n.no3n))
-shapiro.test(residuals(leaf.n.no3n))
-outlierTest(leaf.n.no3n)
+plot(nmass_no3n)
+qqnorm(residuals(nmass_no3n))
+qqline(residuals(nmass_no3n))
+hist(residuals(nmass_no3n))
+shapiro.test(residuals(nmass_no3n))
+outlierTest(nmass_no3n)
 
 # Model output
-summary(leaf.n.no3n)
-Anova(leaf.n.no3n)
-r.squaredGLMM(leaf.n.no3n)
+summary(nmass_no3n)
+Anova(nmass_no3n)
+r.squaredGLMM(nmass_no3n)
 
 # Post-hoc tests
-test(emtrends(leaf.n.no3n, ~1, var = "soil.no3n.norm"))
+test(emtrends(nmass_no3n, ~1, var = "soil.no3n.norm"))
 
 # Plot prep
-nmass.no3n.trend <- data.frame(emmeans(leaf.n.no3n, ~1, "soil.no3n.norm", 
-                                       at = list(soil.no3n.norm = seq(0, 25, 0.1))))
+nmass.no3n.trend <- data.frame(
+  emmeans(nmass_no3n, ~1, "soil.no3n.norm", 
+          at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
 nmass.no3n.plot <- ggplot(data = plot_data, 
@@ -75,8 +78,7 @@ nmass.no3n.plot <- ggplot(data = plot_data,
   geom_point(aes(shape = treatment, fill = treatment), 
              size = 4, alpha = 0.75) +
   geom_ribbon(data = nmass.no3n.trend, 
-              aes(y = emmean/100,
-                  ymin = lower.CL/100, ymax = upper.CL/100),
+              aes(y = emmean/100, ymin = lower.CL/100, ymax = upper.CL/100),
               alpha = 0.2) +
   geom_smooth(data = nmass.no3n.trend, 
               aes(y = emmean/100), 
@@ -104,21 +106,21 @@ nmass.no3n.plot
 ##########################################################################
 ## Leaf mass per area - soil NO3-N
 ##########################################################################
-marea.no3n <- lmer(marea ~ soil.no3n.norm + mineral.pH + (1 | site),
+marea_no3n <- lmer(marea ~ soil.no3n.norm + mineral.pH + (1 | site),
               data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(marea.no3n)
-qqnorm(residuals(marea.no3n))
-qqline(residuals(marea.no3n))
-hist(residuals(marea.no3n))
-shapiro.test(residuals(marea.no3n))
-outlierTest(marea.no3n)
+plot(marea_no3n)
+qqnorm(residuals(marea_no3n))
+qqline(residuals(marea_no3n))
+hist(residuals(marea_no3n))
+shapiro.test(residuals(marea_no3n))
+outlierTest(marea_no3n)
 
 # Model output
-summary(marea.no3n)
-Anova(marea.no3n)
-r.squaredGLMM(marea.no3n)
+summary(marea_no3n)
+Anova(marea_no3n)
+r.squaredGLMM(marea_no3n)
 
 # Plot
 marea.no3n.plot <- ggplot(data = plot_data, 
@@ -147,31 +149,33 @@ marea.no3n.plot
 ##########################################################################
 ## Narea - soil NO3-N
 ##########################################################################
-narea.no3n <- lmer(narea ~ soil.no3n.norm + mineral.pH + (1 | site), 
+narea_no3n <- lmer(narea ~ soil.no3n.norm + mineral.pH + (1 | site), 
               data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(narea.no3n)
-qqnorm(residuals(narea.no3n))
-qqline(residuals(narea.no3n))
-hist(residuals(narea.no3n))
-shapiro.test(residuals(narea.no3n))
-outlierTest(narea.no3n)
+plot(narea_no3n)
+qqnorm(residuals(narea_no3n))
+qqline(residuals(narea_no3n))
+hist(residuals(narea_no3n))
+shapiro.test(residuals(narea_no3n))
+outlierTest(narea_no3n)
 
 # Model output
-summary(narea.no3n)
-Anova(narea.no3n)
-r.squaredGLMM(narea.no3n)
+summary(narea_no3n)
+Anova(narea_no3n)
+r.squaredGLMM(narea_no3n)
 
 # Pairwise comparisons
-test(emtrends(narea.no3n, ~1, var = "soil.no3n.norm"))
+test(emtrends(narea_no3n, ~1, var = "soil.no3n.norm"))
 
 # Plot prep
-narea.no3n.trend <- data.frame(emmeans(narea.no3n, ~1, "soil.no3n.norm", 
-                                       at = list(soil.no3n.norm = seq(0, 25, 0.1))))
+narea.no3n.trend <- data.frame(
+  emmeans(narea_no3n, ~1, "soil.no3n.norm", 
+          at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
-narea.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = narea)) +
+narea.no3n.plot <- ggplot(data = plot_data, 
+                          aes(x = soil.no3n.norm, y = narea)) +
   geom_point(aes(shape = treatment, fill = treatment), 
              size = 4, alpha = 0.75) +
   geom_ribbon(data = narea.no3n.trend, 
@@ -201,23 +205,21 @@ narea.no3n.plot
 ##########################################################################
 ## Anet - soil NO3-N
 ##########################################################################
-data$a400[data$a400 < 0.2] <- NA
-
-a400.no3n <- lmer(sqrt(a400) ~ soil.no3n.norm + mineral.pH + (1 | site),
+a400_no3n <- lmer(sqrt(a400) ~ soil.no3n.norm + mineral.pH + (1 | site),
              data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(a400.no3n)
-qqnorm(residuals(a400.no3n))
-qqline(residuals(a400.no3n))
-hist(residuals(a400.no3n))
-shapiro.test(residuals(a400.no3n))
-outlierTest(a400.no3n)
+plot(a400_no3n)
+qqnorm(residuals(a400_no3n))
+qqline(residuals(a400_no3n))
+hist(residuals(a400_no3n))
+shapiro.test(residuals(a400_no3n))
+outlierTest(a400_no3n)
 
 # Model output
-summary(a400.no3n)
-Anova(a400.no3n)
-r.squaredGLMM(a400.no3n)
+summary(a400_no3n)
+Anova(a400_no3n)
+r.squaredGLMM(a400_no3n)
 
 # Plot
 a400.no3n.plot <- ggplot(data = plot_data, 
@@ -245,25 +247,25 @@ a400.no3n.plot
 ##########################################################################
 ## gsw - soil NO3-N
 ##########################################################################
-gs.no3n <- lmer(log(gsw) ~ soil.no3n.norm + mineral.pH + (1 | site),
+gs_no3n <- lmer(log(gsw) ~ soil.no3n.norm + mineral.pH + (1 | site),
                   data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(gs.no3n)
-qqnorm(residuals(gs.no3n))
-qqline(residuals(gs.no3n))
-hist(residuals(gs.no3n))
-shapiro.test(residuals(gs.no3n))
-outlierTest(gs.no3n)
+plot(gs_no3n)
+qqnorm(residuals(gs_no3n))
+qqline(residuals(gs_no3n))
+hist(residuals(gs_no3n))
+shapiro.test(residuals(gs_no3n))
+outlierTest(gs_no3n)
 
 # Model output
-summary(gs.no3n)
-Anova(gs.no3n)
-r.squaredGLMM(gs.no3n)
+summary(gs_no3n)
+Anova(gs_no3n)
+r.squaredGLMM(gs_no3n)
 
 # Plot
 gs.no3n.plot <- ggplot(data = plot_data, 
-                         aes(x = soil.no3n.norm, y = a400)) +
+                       aes(x = soil.no3n.norm, y = a400)) +
   geom_jitter(aes(shape = treatment, fill = treatment), 
               width = 1, size = 4, alpha = 0.75) +
   scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
@@ -287,28 +289,29 @@ a400.no3n.plot
 ##########################################################################
 ## Vcmax25 - soil NO3-N
 ##########################################################################
-vcmax.no3n <- lmer(vcmax25 ~ soil.no3n.norm + mineral.pH + (1 | site), 
+vcmax_no3n <- lmer(vcmax25 ~ soil.no3n.norm + mineral.pH + (1 | site), 
               data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(vcmax.no3n)
-qqnorm(residuals(vcmax.no3n))
-qqline(residuals(vcmax.no3n))
-hist(residuals(vcmax.no3n))
-shapiro.test(residuals(vcmax.no3n))
-outlierTest(vcmax.no3n)
+plot(vcmax_no3n)
+qqnorm(residuals(vcmax_no3n))
+qqline(residuals(vcmax_no3n))
+hist(residuals(vcmax_no3n))
+shapiro.test(residuals(vcmax_no3n))
+outlierTest(vcmax_no3n)
 
 # Model output
-summary(vcmax.no3n)
-Anova(vcmax.no3n)
-r.squaredGLMM(vcmax.no3n)
+summary(vcmax_no3n)
+Anova(vcmax_no3n)
+r.squaredGLMM(vcmax_no3n)
 
 # Pairwise comparisons
-test(emtrends(vcmax.no3n, ~1, var = "soil.no3n.norm"))
+test(emtrends(vcmax_no3n, ~1, var = "soil.no3n.norm"))
 
 # Plot prep
-vcmax.no3n.trend <- data.frame(emmeans(vcmax.no3n, ~1, "soil.no3n.norm", 
-                                       at = list(soil.no3n.norm = seq(0, 25, 0.1))))
+vcmax.no3n.trend <- data.frame(
+  emmeans(vcmax_no3n, ~1, "soil.no3n.norm",
+          at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
 vcmax.no3n.plot <- ggplot(data = plot_data, 
@@ -342,28 +345,29 @@ vcmax.no3n.plot
 ##########################################################################
 ## Jmax25 - soil NO3-N
 ##########################################################################
-jmax.no3n <- lmer(jmax25 ~ soil.no3n.norm + mineral.pH + (1 | site),
-             data = subset(data, nrcs.code == "ACSA3"))
+jmax_no3n <- lmer(jmax25 ~ soil.no3n.norm + mineral.pH + (1 | site),
+                  data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(jmax.no3n)
-qqnorm(residuals(jmax.no3n))
-qqline(residuals(jmax.no3n))
-hist(residuals(jmax.no3n))
-shapiro.test(residuals(jmax.no3n))
-outlierTest(jmax.no3n)
+plot(jmax_no3n)
+qqnorm(residuals(jmax_no3n))
+qqline(residuals(jmax_no3n))
+hist(residuals(jmax_no3n))
+shapiro.test(residuals(jmax_no3n))
+outlierTest(jmax_no3n)
 
 # Model output
-summary(jmax.no3n)
-Anova(jmax.no3n)
-r.squaredGLMM(jmax.no3n)
+summary(jmax_no3n)
+Anova(jmax_no3n)
+r.squaredGLMM(jmax_no3n)
 
 ## Pairwise comparisons
-test(emtrends(jmax.no3n, ~1, var = "soil.no3n.norm"))
+test(emtrends(jmax_no3n, ~1, var = "soil.no3n.norm"))
 
 # Plot prep
-jmax.no3n.trend <- data.frame(emmeans(jmax.no3n, ~1, "soil.no3n.norm", 
-                                      at = list(soil.no3n.norm = seq(0, 25, 0.1))))
+jmax.no3n.trend <- data.frame(
+  emmeans(jmax_no3n, ~1, "soil.no3n.norm",
+          at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
 jmax.no3n.plot <- ggplot(data = plot_data, 
@@ -390,7 +394,8 @@ jmax.no3n.plot <- ggplot(data = plot_data,
                                "S" = "no N; + S")) +
   labs(x = expression(bold("Soil NO"["3"]*"-N (μg NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
        y = expression(bold("J"["max25"]*" (μmol m"^"-2"*" s"^"-1"*")")),
-       shape = "Treatment", fill = "Treatment") +
+       shape = "Treatment",
+       fill = "Treatment") +
   pubtheme
 jmax.no3n.plot
 
@@ -398,21 +403,21 @@ jmax.no3n.plot
 ##########################################################################
 ## Jmax25:Vcmax25 - soil NO3-N
 ##########################################################################
-vjmax.no3n <- lmer(jmax.vcmax ~ soil.no3n.norm + mineral.pH + (1 | site),
-              data = subset(data, nrcs.code == "ACSA3"))
+vjmax_no3n <- lmer(jmax.vcmax ~ soil.no3n.norm + mineral.pH + (1 | site),
+                   data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(vjmax.no3n)
-qqnorm(residuals(vjmax.no3n))
-qqline(residuals(vjmax.no3n))
-hist(residuals(vjmax.no3n))
-shapiro.test(residuals(vjmax.no3n))
-outlierTest(vjmax.no3n)
+plot(vjmax_no3n)
+qqnorm(residuals(vjmax_no3n))
+qqline(residuals(vjmax_no3n))
+hist(residuals(vjmax_no3n))
+shapiro.test(residuals(vjmax_no3n))
+outlierTest(vjmax_no3n)
 
 # Model output
-summary(vjmax.no3n)
-Anova(vjmax.no3n)
-r.squaredGLMM(vjmax.no3n)
+summary(vjmax_no3n)
+Anova(vjmax_no3n)
+r.squaredGLMM(vjmax_no3n)
 
 # Plot
 jvmax.no3n.plot <- ggplot(data = plot_data, 
@@ -440,27 +445,27 @@ jvmax.no3n.plot
 ##########################################################################
 ## chi - soil NO3-N
 ##########################################################################
-chi.no3n <- lmer(chi ~ soil.no3n.norm + mineral.pH + (1 | site),
-            data = subset(data, nrcs.code == "ACSA3"))
+chi_no3n <- lmer(chi ~ soil.no3n.norm + mineral.pH + (1 | site),
+                 data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(chi.no3n)
-qqnorm(residuals(chi.no3n))
-qqline(residuals(chi.no3n))
-hist(residuals(chi.no3n))
-shapiro.test(residuals(chi.no3n))
-outlierTest(chi.no3n)
+plot(chi_no3n)
+qqnorm(residuals(chi_no3n))
+qqline(residuals(chi_no3n))
+hist(residuals(chi_no3n))
+shapiro.test(residuals(chi_no3n))
+outlierTest(chi_no3n)
 
 # Model output
-summary(chi.no3n)
-Anova(chi.no3n)
-r.squaredGLMM(chi.no3n)
+summary(chi_no3n)
+Anova(chi_no3n)
+r.squaredGLMM(chi_no3n)
 
 ## Pairwise comparisons
-test(emtrends(chi.no3n,  ~1, var = "soil.no3n.norm"))
+test(emtrends(chi_no3n,  ~1, var = "soil.no3n.norm"))
 
 # Plot prep
-chi.no3.trend <- data.frame(emmeans(chi.no3n, ~1, "soil.no3n.norm", 
+chi.no3.trend <- data.frame(emmeans(chi_no3n, ~1, "soil.no3n.norm", 
                                     at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
@@ -495,27 +500,28 @@ chi.no3n.plot
 ##########################################################################
 ## PNUE - soil NO3-N
 ##########################################################################
-pnue.no3n <- lmer(pnue ~ soil.no3n.norm + mineral.pH + (1 | site),
-             data = subset(data, nrcs.code == "ACSA3"))
+pnue_no3n <- lmer(pnue ~ soil.no3n.norm + mineral.pH + (1 | site),
+                  data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(pnue.no3n)
-qqnorm(residuals(pnue.no3n))
-qqline(residuals(pnue.no3n))
-hist(residuals(pnue.no3n))
-shapiro.test(residuals(pnue.no3n))
-outlierTest(pnue.no3n)
+plot(pnue_no3n)
+qqnorm(residuals(pnue_no3n))
+qqline(residuals(pnue_no3n))
+hist(residuals(pnue_no3n))
+shapiro.test(residuals(pnue_no3n))
+outlierTest(pnue_no3n)
 
 # Model output
-summary(pnue.no3n)
-Anova(pnue.no3n)
-r.squaredGLMM(pnue.no3n)
+summary(pnue_no3n)
+Anova(pnue_no3n)
+r.squaredGLMM(pnue_no3n)
 
 # Pairwise comparisons
-test(emtrends(pnue.no3n, ~1, var = "soil.no3n.norm"))
+test(emtrends(pnue_no3n, ~1, var = "soil.no3n.norm"))
 
 # Plot
-pnue.no3n.plot <- ggplot(data = plot_data, aes(x = soil.no3n.norm, y = pnue)) +
+pnue.no3n.plot <- ggplot(data = plot_data, 
+                         aes(x = soil.no3n.norm, y = pnue)) +
   geom_point(aes(shape = treatment, fill = treatment), 
              size = 4, alpha = 0.75) +
   scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
@@ -540,28 +546,29 @@ pnue.no3n.plot
 ##########################################################################
 ## Narea.chi - soil NO3-N
 ##########################################################################
-narea.chi.no3n <- lmer(narea.chi ~ soil.no3n.norm + mineral.pH + (1 | site),
-                  data = subset(data, nrcs.code == "ACSA3"))
+narea.chi_no3n <- lmer(narea.chi ~ soil.no3n.norm + mineral.pH + (1 | site),
+                       data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(narea.chi.no3n)
-qqnorm(residuals(narea.chi.no3n))
-qqline(residuals(narea.chi.no3n))
-hist(residuals(narea.chi.no3n))
-shapiro.test(residuals(narea.chi.no3n))
-outlierTest(narea.chi.no3n)
+plot(narea.chi_no3n)
+qqnorm(residuals(narea.chi_no3n))
+qqline(residuals(narea.chi_no3n))
+hist(residuals(narea.chi_no3n))
+shapiro.test(residuals(narea.chi_no3n))
+outlierTest(narea.chi_no3n)
 
 # Model output
-summary(narea.chi.no3n)
-Anova(narea.chi.no3n)
-r.squaredGLMM(narea.chi.no3n)
+summary(narea.chi_no3n)
+Anova(narea.chi_no3n)
+r.squaredGLMM(narea.chi_no3n)
 
 # Post-hoc tests
-test(emtrends(narea.chi.no3n, ~1, var = "soil.no3n.norm"))
+test(emtrends(narea.chi_no3n, ~1, var = "soil.no3n.norm"))
 
 # Plot prep
-narea.chi.no3n.trend <- data.frame(emmeans(narea.chi.no3n, ~1, "soil.no3n.norm", 
-                                       at = list(soil.no3n.norm = seq(0, 25, 0.1))))
+narea.chi.no3n.trend <- data.frame(
+  emmeans(narea.chi_no3n, ~1, "soil.no3n.norm", 
+          at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
 narea.chi.no3n.plot <- ggplot(data = plot_data, 
@@ -593,32 +600,77 @@ narea.chi.no3n.plot <- ggplot(data = plot_data,
 narea.chi.no3n.plot
 
 ##########################################################################
+## Narea:gs - soil NO3-N
+##########################################################################
+narea.gs_no3n <- lmer(log(narea.gs) ~ soil.no3n.norm + mineral.pH + (1 | site),
+                       data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(narea.gs_no3n)
+qqnorm(residuals(narea.gs_no3n))
+qqline(residuals(narea.gs_no3n))
+hist(residuals(narea.gs_no3n))
+shapiro.test(residuals(narea.gs_no3n))
+outlierTest(narea.gs_no3n)
+
+# Model output
+summary(narea.gs_no3n)
+Anova(narea.gs_no3n)
+r.squaredGLMM(narea.gs_no3n)
+
+# Post-hoc tests
+test(emtrends(narea.gs_no3n, ~1, var = "soil.no3n.norm"))
+
+# Plot
+narea.gs.no3n.plot <- ggplot(data = plot_data, 
+                             aes(x = soil.no3n.norm, y = narea.gs)) +
+  geom_point(aes(shape = treatment, fill = treatment), 
+             size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
+  scale_y_continuous(limits = c(0, 150), breaks = seq(0, 150, 30)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00", "#E69F00", "#009E73"),
+                    labels = c("C" = "no N; no S",
+                               "NO3" = "+ N; no S",
+                               "AS" = "+ N; + S",
+                               "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NO"["3"]*"-N (μg NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("N"["area"]*": g"["s"]*" (gN m"["leaf"]*""^"-2"*")")),
+       shape = "Treatment", fill = "Treatment") +
+  pubtheme
+narea.gs.no3n.plot
+
+##########################################################################
 ## Vcmax25.chi - soil NO3-N
 ##########################################################################
 data$vcmax.chi[85] <- NA
 
-vcmax.chi.no3n <- lmer(vcmax.chi ~ soil.no3n.norm + mineral.pH + (1 | site),
+vcmax.chi_no3n <- lmer(vcmax.chi ~ soil.no3n.norm + mineral.pH + (1 | site),
                   data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(vcmax.chi.no3n)
-qqnorm(residuals(vcmax.chi.no3n))
-qqline(residuals(vcmax.chi.no3n))
-hist(residuals(vcmax.chi.no3n))
-shapiro.test(residuals(vcmax.chi.no3n))
-outlierTest(vcmax.chi.no3n)
+plot(vcmax.chi_no3n)
+qqnorm(residuals(vcmax.chi_no3n))
+qqline(residuals(vcmax.chi_no3n))
+hist(residuals(vcmax.chi_no3n))
+shapiro.test(residuals(vcmax.chi_no3n))
+outlierTest(vcmax.chi_no3n)
 
 # Model output
-summary(vcmax.chi.no3n)
-Anova(vcmax.chi.no3n)
-r.squaredGLMM(vcmax.chi.no3n)
+summary(vcmax.chi_no3n)
+Anova(vcmax.chi_no3n)
+r.squaredGLMM(vcmax.chi_no3n)
 
 # Post-hoc tests
-test(emtrends(vcmax.chi.no3n, ~1, var = "soil.no3n.norm"))
+test(emtrends(vcmax.chi_no3n, ~1, var = "soil.no3n.norm"))
 
 # Plot prep
 vcmax.chi.no3n.trend <- data.frame(
-  emmeans(vcmax.chi.no3n, ~1, "soil.no3n.norm", 
+  emmeans(vcmax.chi_no3n, ~1, "soil.no3n.norm", 
           at = list(soil.no3n.norm = seq(0, 25, 0.1))))
 
 # Plot
@@ -651,26 +703,94 @@ vcmax.chi.no3n.plot <- ggplot(data = plot_data,
 vcmax.chi.no3n.plot
 
 ##########################################################################
-## PNUE.chi - soil NO3-N
+## Vcmax25:gs - soil NO3-N
 ##########################################################################
-pnue.chi.no3n <- lmer(pnue.chi ~ soil.no3n.norm + mineral.pH + (1 | site),
+vcmax.gs_no3n <- lmer(log(vcmax.gs) ~ soil.no3n.norm + mineral.pH + (1 | site),
                       data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(pnue.chi.no3n)
-qqnorm(residuals(pnue.chi.no3n))
-qqline(residuals(pnue.chi.no3n))
-hist(residuals(pnue.chi.no3n))
-shapiro.test(residuals(pnue.chi.no3n))
-outlierTest(pnue.chi.no3n)
+plot(vcmax.gs_no3n)
+qqnorm(residuals(vcmax.gs_no3n))
+qqline(residuals(vcmax.gs_no3n))
+hist(residuals(vcmax.gs_no3n))
+shapiro.test(residuals(vcmax.gs_no3n))
+outlierTest(vcmax.gs_no3n)
 
 # Model output
-summary(pnue.chi.no3n)
-Anova(pnue.chi.no3n)
-r.squaredGLMM(pnue.chi.no3n)
+summary(vcmax.gs_no3n)
+Anova(vcmax.gs_no3n)
+r.squaredGLMM(vcmax.gs_no3n)
 
 # Post-hoc tests
-test(emtrends(pnue.chi.no3n, ~1, var = "soil.no3n.norm"))
+test(emtrends(vcmax.gs_no3n, ~1, var = "soil.no3n.norm"))
+
+##########################################################################
+## PNUE.chi - soil NO3-N
+##########################################################################
+pnue.chi_no3n <- lmer(pnue.chi ~ soil.no3n.norm + mineral.pH + (1 | site),
+                      data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(pnue.chi_no3n)
+qqnorm(residuals(pnue.chi_no3n))
+qqline(residuals(pnue.chi_no3n))
+hist(residuals(pnue.chi_no3n))
+shapiro.test(residuals(pnue.chi_no3n))
+outlierTest(pnue.chi_no3n)
+
+# Model output
+summary(pnue.chi_no3n)
+Anova(pnue.chi_no3n)
+r.squaredGLMM(pnue.chi_no3n)
+
+# Post-hoc tests
+test(emtrends(pnue.chi_no3n, ~1, var = "soil.no3n.norm"))
+
+# Plot
+pnue.chi.no3n.plot <- ggplot(data = plot_data, 
+                             aes(x = soil.no3n.norm, y = pnue.chi)) +
+  geom_point(aes(shape = treatment, fill = treatment), 
+             size = 4, alpha = 0.75) +
+  scale_x_continuous(limits = c(0, 25), breaks = seq(0, 25, 5)) +
+  scale_y_continuous(limits = c(0, 130), breaks = seq(0, 120, 30)) +
+  scale_shape_manual(values = c(21, 22, 23, 24),
+                     labels = c("C" = "no N; no S",
+                                "NO3" = "+ N; no S",
+                                "AS" = "+ N; + S",
+                                "S" = "no N; + S")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00", "#E69F00", "#009E73"),
+                    labels = c("C" = "no N; no S",
+                               "NO3" = "+ N; no S",
+                               "AS" = "+ N; + S",
+                               "S" = "no N; + S")) +
+  labs(x = expression(bold("Soil NO"["3"]*"-N (μg NO"["3"]*"-N g"["resin"]*""^"-1"*" d"^"-1"*")")),
+       y = expression(bold("PNUE:"*chi*" (μmol CO"["2"]*" mol N"^"-1"*" s"^"-1"*")")),
+       shape = "Treatment", fill = "Treatment") +
+  pubtheme +
+  theme(axis.title.y = element_text(size = 13))
+pnue.chi.no3n.plot
+
+##########################################################################
+## PNUE.chi - soil NO3-N
+##########################################################################
+pnue.gs_no3n <- lmer(pnue.gs ~ soil.no3n.norm + mineral.pH + (1 | site),
+                     data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(pnue.gs_no3n)
+qqnorm(residuals(pnue.gs_no3n))
+qqline(residuals(pnue.gs_no3n))
+hist(residuals(pnue.gs_no3n))
+shapiro.test(residuals(pnue.gs_no3n))
+outlierTest(pnue.gs_no3n)
+
+# Model output
+summary(pnue.gs_no3n)
+Anova(pnue.gs_no3n)
+r.squaredGLMM(pnue.gs_no3n)
+
+# Post-hoc tests
+test(emtrends(pnue.gs_no3n, ~1, var = "soil.no3n.norm"))
 
 # Plot
 pnue.chi.no3n.plot <- ggplot(data = plot_data, 
@@ -705,24 +825,24 @@ pnue.chi.no3n.plot
 ##########################################################################
 ## Nleaf
 ##########################################################################
-leaf.n.nh4n <- lmer(leaf.n ~ soil.nh4n.norm + mineral.pH + (1 | site), 
+nmass_nh4n <- lmer(leaf.n ~ soil.nh4n.norm + mineral.pH + (1 | site), 
                data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(leaf.n.nh4n)
-qqnorm(residuals(leaf.n.nh4n))
-qqline(residuals(leaf.n.nh4n))
-hist(residuals(leaf.n.nh4n))
-shapiro.test(residuals(leaf.n.nh4n))
-outlierTest(leaf.n.nh4n)
+plot(nmass_nh4n)
+qqnorm(residuals(nmass_nh4n))
+qqline(residuals(nmass_nh4n))
+hist(residuals(nmass_nh4n))
+shapiro.test(residuals(nmass_nh4n))
+outlierTest(nmass_nh4n)
 
 # Model output
-summary(leaf.n.nh4n)
-Anova(leaf.n.nh4n)
-r.squaredGLMM(leaf.n.nh4n)
+summary(nmass_nh4n)
+Anova(nmass_nh4n)
+r.squaredGLMM(nmass_nh4n)
 
 # Post-hoc tests
-test(emtrends(leaf.n.nh4n, ~1, var = "soil.nh4n.norm"))
+test(emtrends(nmass_nh4n, ~1, var = "soil.nh4n.norm"))
 
 # Plot
 nmass.nh4n.plot <- ggplot(data = plot_data, 
@@ -751,28 +871,28 @@ nmass.nh4n.plot
 ##########################################################################
 ## Leaf mass per area
 ##########################################################################
-marea.nh4 <- lmer(log(marea) ~ soil.nh4n.norm + mineral.pH + (1 | site),
-              data = subset(data, nrcs.code == "ACSA3"))
+marea_nh4 <- lmer(log(marea) ~ soil.nh4n.norm + mineral.pH + (1 | site),
+                  data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(marea.nh4)
-qqnorm(residuals(marea.nh4))
-qqline(residuals(marea.nh4))
-hist(residuals(marea.nh4))
-shapiro.test(residuals(marea.nh4))
-outlierTest(marea.nh4)
+plot(marea_nh4)
+qqnorm(residuals(marea_nh4))
+qqline(residuals(marea_nh4))
+hist(residuals(marea_nh4))
+shapiro.test(residuals(marea_nh4))
+outlierTest(marea_nh4)
 
 # Model output
-summary(marea.nh4)
-Anova(marea.nh4)
-r.squaredGLMM(marea.nh4)
+summary(marea_nh4)
+Anova(marea_nh4)
+r.squaredGLMM(marea_nh4)
 
 # Post-hoc tests
-test(emtrends(marea.nh4, ~1, var = "soil.nh4n.norm"))
+test(emtrends(marea_nh4, ~1, var = "soil.nh4n.norm"))
 
 # Plot prep
 marea.nh4n.trend <- data.frame(
-  emmeans(marea.nh4, ~1, "soil.nh4n.norm", 
+  emmeans(marea_nh4, ~1, "soil.nh4n.norm", 
           at = list(soil.nh4n.norm = seq(0, 7, 0.1)),
           type = "response"))
 
@@ -808,28 +928,28 @@ marea.nh4n.plot
 ##########################################################################
 ## Narea
 ##########################################################################
-narea.nh4 <- lmer(narea ~ soil.nh4n.norm + mineral.pH + (1 | site), 
-              data = subset(data, nrcs.code == "ACSA3"))
+narea_nh4 <- lmer(narea ~ soil.nh4n.norm + mineral.pH + (1 | site), 
+                  data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(narea.nh4)
-qqnorm(residuals(narea.nh4))
-qqline(residuals(narea.nh4))
-hist(residuals(narea.nh4))
-shapiro.test(residuals(narea.nh4))
-outlierTest(narea.nh4)
+plot(narea_nh4)
+qqnorm(residuals(narea_nh4))
+qqline(residuals(narea_nh4))
+hist(residuals(narea_nh4))
+shapiro.test(residuals(narea_nh4))
+outlierTest(narea_nh4)
 
 # Model output
-summary(narea.nh4)
-Anova(narea.nh4)
-r.squaredGLMM(narea.nh4)
+summary(narea_nh4)
+Anova(narea_nh4)
+r.squaredGLMM(narea_nh4)
 
 # Pairwise comparisons
-test(emtrends(narea.nh4, ~1, var = "soil.nh4n.norm"))
+test(emtrends(narea_nh4, ~1, var = "soil.nh4n.norm"))
 
 # Plot prep
 narea.nh4n.trend <- data.frame(
-  emmeans(narea.nh4, ~1, "soil.nh4n.norm", 
+  emmeans(narea_nh4, ~1, "soil.nh4n.norm", 
           at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
 
 # Plot
@@ -864,21 +984,21 @@ narea.nh4n.plot
 ##########################################################################
 ## Anet
 ##########################################################################
-a400.nh4 <- lmer(sqrt(a400) ~ soil.nh4n.norm + mineral.pH + (1 | site),
-             data = subset(data, nrcs.code == "ACSA3"))
+a400_nh4 <- lmer(sqrt(a400) ~ soil.nh4n.norm + mineral.pH + (1 | site),
+                 data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(a400.nh4)
-qqnorm(residuals(a400.nh4))
-qqline(residuals(a400.nh4))
-hist(residuals(a400.nh4))
-shapiro.test(residuals(a400.nh4))
-outlierTest(a400.nh4)
+plot(a400_nh4)
+qqnorm(residuals(a400_nh4))
+qqline(residuals(a400_nh4))
+hist(residuals(a400_nh4))
+shapiro.test(residuals(a400_nh4))
+outlierTest(a400_nh4)
 
 # Model output
-summary(a400.nh4)
-Anova(a400.nh4)
-r.squaredGLMM(a400.nh4)
+summary(a400_nh4)
+Anova(a400_nh4)
+r.squaredGLMM(a400_nh4)
 
 # Plot
 a400.nh4n.plot <- ggplot(data = plot_data, 
@@ -906,29 +1026,29 @@ a400.nh4n.plot
 ##########################################################################
 ## gs
 ##########################################################################
-gs.nh4 <- lmer(log(gsw) ~ soil.nh4n.norm + mineral.pH + (1 | site),
+gs_nh4 <- lmer(log(gsw) ~ soil.nh4n.norm + mineral.pH + (1 | site),
                  data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(gs.nh4)
-qqnorm(residuals(gs.nh4))
-qqline(residuals(gs.nh4))
-hist(residuals(gs.nh4))
-shapiro.test(residuals(gs.nh4))
-outlierTest(gs.nh4)
+plot(gs_nh4)
+qqnorm(residuals(gs_nh4))
+qqline(residuals(gs_nh4))
+hist(residuals(gs_nh4))
+shapiro.test(residuals(gs_nh4))
+outlierTest(gs_nh4)
 
 # Model output
-summary(gs.nh4)
-Anova(gs.nh4)
-r.squaredGLMM(gs.nh4)
+summary(gs_nh4)
+Anova(gs_nh4)
+r.squaredGLMM(gs_nh4)
 
 # Plot
-a400.nh4n.plot <- ggplot(data = plot_data, 
-                         aes(x = soil.nh4n.norm, y = a400)) +
+gs.nh4n.plot <- ggplot(data = plot_data, 
+                       aes(x = soil.nh4n.norm, y = gsw)) +
   geom_point(aes(shape = treatment, fill = treatment), 
              size = 4, alpha = 0.75) +
   scale_x_continuous(limits = c(0, 7), breaks = seq(0, 6, 2)) +
-  scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2.5)) +
+  scale_y_continuous(limits = c(0, 0.1), breaks = seq(0, 0.1, 0.025)) +
   scale_shape_manual(values = c(21, 22, 23, 24),
                      labels = c("C" = "no N; no S",
                                 "NO3" = "+ N; no S",
@@ -943,31 +1063,29 @@ a400.nh4n.plot <- ggplot(data = plot_data,
        y = expression(bold("A"["net"]*" (μmol m"^"-2"*" s"^"-1"*")")),
        shape = "Treatment", fill = "Treatment") +
   pubtheme
-a400.nh4n.plot
-
-
+gs.nh4n.plot
 
 ##########################################################################
 ## Vcmax25
 ##########################################################################
-vcmax.nh4 <- lmer(log(vcmax25) ~ soil.nh4n.norm + mineral.pH + (1 | site), 
-              data = subset(data, nrcs.code == "ACSA3"))
+vcmax_nh4 <- lmer(log(vcmax25) ~ soil.nh4n.norm + mineral.pH + (1 | site), 
+                  data = subset(data, nrcs.code == "ACSA3"))
 
 # Check model assumptions
-plot(vcmax.nh4)
-qqnorm(residuals(vcmax.nh4))
-qqline(residuals(vcmax.nh4))
-hist(residuals(vcmax.nh4))
-shapiro.test(residuals(vcmax.nh4))
-outlierTest(vcmax.nh4)
+plot(vcmax_nh4)
+qqnorm(residuals(vcmax_nh4))
+qqline(residuals(vcmax_nh4))
+hist(residuals(vcmax_nh4))
+shapiro.test(residuals(vcmax_nh4))
+outlierTest(vcmax_nh4)
 
 # Model output
-summary(vcmax.nh4)
-Anova(vcmax.nh4)
-r.squaredGLMM(vcmax.nh4)
+summary(vcmax_nh4)
+Anova(vcmax_nh4)
+r.squaredGLMM(vcmax_nh4)
 
 # Pairwise comparisons
-test(emtrends(vcmax.nh4, ~1, var = "soil.nh4n.norm"))
+test(emtrends(vcmax_nh4, ~1, var = "soil.nh4n.norm"))
 
 # Plot
 vcmax.nh4n.plot <- ggplot(data = plot_data, 
@@ -995,21 +1113,21 @@ vcmax.nh4n.plot
 ##########################################################################
 ## Jmax25
 ##########################################################################
-jmax.nh4 <- lmer(jmax25 ~ soil.nh4n.norm + mineral.pH + (1 | site),
-             data = subset(data, nrcs.code == "ACSA3"))
+jmax_nh4 <- lmer(jmax25 ~ soil.nh4n.norm + mineral.pH + (1 | site),
+                 data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(jmax.nh4)
-qqnorm(residuals(jmax.nh4))
-qqline(residuals(jmax.nh4))
-hist(residuals(jmax.nh4))
-shapiro.test(residuals(jmax.nh4))
-outlierTest(jmax.nh4)
+plot(jmax_nh4)
+qqnorm(residuals(jmax_nh4))
+qqline(residuals(jmax_nh4))
+hist(residuals(jmax_nh4))
+shapiro.test(residuals(jmax_nh4))
+outlierTest(jmax_nh4)
 
 # Model output
-summary(jmax.nh4)
-Anova(jmax.nh4)
-r.squaredGLMM(jmax.nh4)
+summary(jmax_nh4)
+Anova(jmax_nh4)
+r.squaredGLMM(jmax_nh4)
 
 ## Pairwise comparisons
 test(emtrends(jmax, ~1, var = "soil.nh4n.norm"))
@@ -1040,21 +1158,21 @@ jmax.nh4n.plot
 ##########################################################################
 ## Jmax25:Vcmax25
 ##########################################################################
-vjmax.nh4 <- lmer(jmax.vcmax ~ soil.nh4n.norm + mineral.pH + (1 | site),
+vjmax_nh4 <- lmer(jmax.vcmax ~ soil.nh4n.norm + mineral.pH + (1 | site),
                   data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(vjmax.nh4)
-qqnorm(residuals(vjmax.nh4))
-qqline(residuals(vjmax.nh4))
-hist(residuals(vjmax.nh4))
-shapiro.test(residuals(vjmax.nh4))
-outlierTest(vjmax.nh4)
+plot(vjmax_nh4)
+qqnorm(residuals(vjmax_nh4))
+qqline(residuals(vjmax_nh4))
+hist(residuals(vjmax_nh4))
+shapiro.test(residuals(vjmax_nh4))
+outlierTest(vjmax_nh4)
 
 # Model output
-summary(vjmax.nh4)
-Anova(vjmax.nh4)
-r.squaredGLMM(vjmax.nh4)
+summary(vjmax_nh4)
+Anova(vjmax_nh4)
+r.squaredGLMM(vjmax_nh4)
 
 # Plot
 jvmax.nh4n.plot <- ggplot(data = plot_data, 
@@ -1082,28 +1200,28 @@ jvmax.nh4n.plot
 ##########################################################################
 ## chi
 ##########################################################################
-chi.nh4 <- lmer(chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
+chi_nh4 <- lmer(chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
                 data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(chi.nh4)
-qqnorm(residuals(chi.nh4))
-qqline(residuals(chi.nh4))
-hist(residuals(chi.nh4))
-shapiro.test(residuals(chi.nh4))
-outlierTest(chi.nh4)
+plot(chi_nh4)
+qqnorm(residuals(chi_nh4))
+qqline(residuals(chi_nh4))
+hist(residuals(chi_nh4))
+shapiro.test(residuals(chi_nh4))
+outlierTest(chi_nh4)
 
 # Model output
-summary(chi.nh4)
-Anova(chi.nh4)
-r.squaredGLMM(chi.nh4)
+summary(chi_nh4)
+Anova(chi_nh4)
+r.squaredGLMM(chi_nh4)
 
 ## Pairwise comparisons
-test(emtrends(chi.nh4,  ~1, var = "soil.nh4n.norm"))
+test(emtrends(chi_nh4,  ~1, var = "soil.nh4n.norm"))
 
 # Plot prep
 chi.nh4.trend <- data.frame(
-  emmeans(chi.nh4, ~1, "soil.nh4n.norm", 
+  emmeans(chi_nh4, ~1, "soil.nh4n.norm", 
           at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
 
 # Plot
@@ -1138,28 +1256,28 @@ chi.nh4n.plot
 ##########################################################################
 ## PNUE
 ##########################################################################
-pnue.nh4 <- lmer(pnue ~ soil.nh4n.norm + mineral.pH + (1 | site),
+pnue_nh4 <- lmer(pnue ~ soil.nh4n.norm + mineral.pH + (1 | site),
              data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(pnue.nh4)
-qqnorm(residuals(pnue.nh4))
-qqline(residuals(pnue.nh4))
-hist(residuals(pnue.nh4))
-shapiro.test(residuals(pnue.nh4))
-outlierTest(pnue.nh4)
+plot(pnue_nh4)
+qqnorm(residuals(pnue_nh4))
+qqline(residuals(pnue_nh4))
+hist(residuals(pnue_nh4))
+shapiro.test(residuals(pnue_nh4))
+outlierTest(pnue_nh4)
 
 # Model output
-summary(pnue.nh4)
-Anova(pnue.nh4)
-r.squaredGLMM(pnue.nh4)
+summary(pnue_nh4)
+Anova(pnue_nh4)
+r.squaredGLMM(pnue_nh4)
 
 # Pairwise comparisons
-test(emtrends(pnue.nh4, ~1, var = "soil.nh4n.norm"))
+test(emtrends(pnue_nh4, ~1, var = "soil.nh4n.norm"))
 
 # Plot prep
 pnue.nh4.trend <- data.frame(
-  emmeans(pnue.nh4, ~1, "soil.nh4n.norm", 
+  emmeans(pnue_nh4, ~1, "soil.nh4n.norm", 
           at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
 
 # Plot
@@ -1195,28 +1313,28 @@ pnue.nh4n.plot
 ##########################################################################
 ## Narea.chi
 ##########################################################################
-narea.chi.nh4 <- lmer(narea.chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
+narea.chi_nh4 <- lmer(narea.chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
                       data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(narea.chi.nh4)
-qqnorm(residuals(narea.chi.nh4))
-qqline(residuals(narea.chi.nh4))
-hist(residuals(narea.chi.nh4))
-shapiro.test(residuals(narea.chi.nh4))
-outlierTest(narea.chi.nh4)
+plot(narea.chi_nh4)
+qqnorm(residuals(narea.chi_nh4))
+qqline(residuals(narea.chi_nh4))
+hist(residuals(narea.chi_nh4))
+shapiro.test(residuals(narea.chi_nh4))
+outlierTest(narea.chi_nh4)
 
 # Model output
-summary(narea.chi.nh4)
-Anova(narea.chi.nh4)
-r.squaredGLMM(narea.chi.nh4)
+summary(narea.chi_nh4)
+Anova(narea.chi_nh4)
+r.squaredGLMM(narea.chi_nh4)
 
 # Post-hoc tests
-test(emtrends(narea.chi.nh4, ~1, var = "soil.nh4n.norm"))
+test(emtrends(narea.chi_nh4, ~1, var = "soil.nh4n.norm"))
 
 # Plot prep
 narea.chi.nh4n.trend <- data.frame(
-  emmeans(narea.chi.nh4, ~1, "soil.nh4n.norm", 
+  emmeans(narea.chi_nh4, ~1, "soil.nh4n.norm", 
           at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
 
 # Plot
@@ -1249,26 +1367,45 @@ narea.chi.nh4n.plot <- ggplot(data = plot_data,
 narea.chi.nh4n.plot
 
 ##########################################################################
+## Narea:gs
+##########################################################################
+narea.gs_nh4 <- lmer(log(narea.gs) ~ soil.nh4n.norm + mineral.pH + (1 | site),
+                      data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(narea.gs_nh4)
+qqnorm(residuals(narea.gs_nh4))
+qqline(residuals(narea.gs_nh4))
+hist(residuals(narea.gs_nh4))
+shapiro.test(residuals(narea.gs_nh4))
+outlierTest(narea.gs_nh4)
+
+# Model output
+summary(narea.gs_nh4)
+Anova(narea.gs_nh4)
+r.squaredGLMM(narea.gs_nh4)
+
+##########################################################################
 ## Vcmax25.chi
 ##########################################################################
-vcmax.chi.nh4 <- lmer(vcmax.chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
+vcmax.chi_nh4 <- lmer(vcmax.chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
                   data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(vcmax.chi.nh4)
-qqnorm(residuals(vcmax.chi.nh4))
-qqline(residuals(vcmax.chi.nh4))
-hist(residuals(vcmax.chi.nh4))
-shapiro.test(residuals(vcmax.chi.nh4))
-outlierTest(vcmax.chi.nh4)
+plot(vcmax.chi_nh4)
+qqnorm(residuals(vcmax.chi_nh4))
+qqline(residuals(vcmax.chi_nh4))
+hist(residuals(vcmax.chi_nh4))
+shapiro.test(residuals(vcmax.chi_nh4))
+outlierTest(vcmax.chi_nh4)
 
 # Model output
-summary(vcmax.chi.nh4)
-Anova(vcmax.chi.nh4)
-r.squaredGLMM(vcmax.chi.nh4)
+summary(vcmax.chi_nh4)
+Anova(vcmax.chi_nh4)
+r.squaredGLMM(vcmax.chi_nh4)
 
 # Post-hoc tests
-test(emtrends(vcmax.chi.nh4, ~1, var = "soil.nh4n.norm"))
+test(emtrends(vcmax.chi_nh4, ~1, var = "soil.nh4n.norm"))
 
 # Plot
 vcmax.chi.nh4n.plot <- ggplot(data = plot_data, 
@@ -1294,30 +1431,52 @@ vcmax.chi.nh4n.plot <- ggplot(data = plot_data,
 vcmax.chi.nh4n.plot
 
 ##########################################################################
-## PNUE.chi
+## Vcmax25:gs
 ##########################################################################
-pnue.chi.nh4 <- lmer(pnue.chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
+vcmax.gs_nh4 <- lmer(log(vcmax.gs) ~ soil.nh4n.norm + mineral.pH + (1 | site),
                       data = subset(data, nrcs.code == "ACSA3"))
 
 # Check normality assumptions
-plot(pnue.chi.nh4)
-qqnorm(residuals(pnue.chi.nh4))
-qqline(residuals(pnue.chi.nh4))
-hist(residuals(pnue.chi.nh4))
-shapiro.test(residuals(pnue.chi.nh4))
-outlierTest(pnue.chi.nh4)
+plot(vcmax.gs_nh4)
+qqnorm(residuals(vcmax.gs_nh4))
+qqline(residuals(vcmax.gs_nh4))
+hist(residuals(vcmax.gs_nh4))
+shapiro.test(residuals(vcmax.gs_nh4))
+outlierTest(vcmax.gs_nh4)
 
 # Model output
-summary(pnue.chi.nh4)
-Anova(pnue.chi.nh4)
-r.squaredGLMM(pnue.chi.nh4)
+summary(vcmax.gs_nh4)
+Anova(vcmax.gs_nh4)
+r.squaredGLMM(vcmax.gs_nh4)
 
 # Post-hoc tests
-test(emtrends(pnue.chi.nh4, ~1, var = "soil.nh4n.norm"))
+test(emtrends(vcmax.gs_nh4, ~1, var = "soil.nh4n.norm"))
+
+##########################################################################
+## PNUE.chi
+##########################################################################
+pnue.chi_nh4 <- lmer(pnue.chi ~ soil.nh4n.norm + mineral.pH + (1 | site),
+                     data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(pnue.chi_nh4)
+qqnorm(residuals(pnue.chi_nh4))
+qqline(residuals(pnue.chi_nh4))
+hist(residuals(pnue.chi_nh4))
+shapiro.test(residuals(pnue.chi_nh4))
+outlierTest(pnue.chi_nh4)
+
+# Model output
+summary(pnue.chi_nh4)
+Anova(pnue.chi_nh4)
+r.squaredGLMM(pnue.chi_nh4)
+
+# Post-hoc tests
+test(emtrends(pnue.chi_nh4, ~1, var = "soil.nh4n.norm"))
 
 # Plot prep
 pnue.chi.nh4n.trend <- data.frame(
-  emmeans(pnue.chi.nh4, ~1, "soil.nh4n.norm", 
+  emmeans(pnue.chi_nh4, ~1, "soil.nh4n.norm", 
           at = list(soil.nh4n.norm = seq(0, 7, 0.1))))
 
 # Plot
@@ -1349,6 +1508,28 @@ pnue.chi.nh4n.plot <- ggplot(data = plot_data,
   pubtheme +
   theme(axis.title.y = element_text(size = 13))
 pnue.chi.nh4n.plot
+
+##########################################################################
+## PNUE:gs
+##########################################################################
+pnue.gs_nh4 <- lmer(pnue.gs ~ soil.nh4n.norm + mineral.pH + (1 | site),
+                    data = subset(data, nrcs.code == "ACSA3"))
+
+# Check normality assumptions
+plot(pnue.gs_nh4)
+qqnorm(residuals(pnue.gs_nh4))
+qqline(residuals(pnue.gs_nh4))
+hist(residuals(pnue.gs_nh4))
+shapiro.test(residuals(pnue.gs_nh4))
+outlierTest(pnue.gs_nh4)
+
+# Model output
+summary(pnue.gs_nh4)
+Anova(pnue.gs_nh4)
+r.squaredGLMM(pnue.gs_nh4)
+
+# Post-hoc tests
+test(emtrends(pnue.gs_nh4, ~1, var = "soil.nh4n.norm"))
 
 ##########################################################################
 ## Make plots
