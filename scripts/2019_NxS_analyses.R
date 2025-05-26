@@ -16,6 +16,9 @@ data <- read.csv("../data/2019_NxS_datasheet.csv",
                  stringsAsFactors = FALSE,
                  na.strings = "NA")
 
+min(data$mineral.pH)
+max(data$mineral.pH)
+
 ##########################################################################
 ## Nleaf - soil N
 ##########################################################################
